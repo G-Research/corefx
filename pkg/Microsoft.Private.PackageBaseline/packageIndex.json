@@ -108,7 +108,8 @@
         "1.0.2",
         "1.1.0",
         "2.0.0",
-        "2.0.1"
+        "2.0.1",
+        "2.0.2"
       ],
       "BaselineVersion": "2.0.0",
       "InboxOn": {}
@@ -261,6 +262,9 @@
       }
     },
     "Microsoft.XmlSerializer.Generator": {
+       "StableVersions": [
+        "1.0.0"
+      ],
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "1.0.0.0": "1.0.0"
@@ -1125,7 +1129,8 @@
         "4.3.0",
         "4.4.0",
         "4.4.1",
-        "4.4.2"
+        "4.4.2",
+        "4.4.3"
       ],
       "BaselineVersion": "4.4.0",
       "InboxOn": {
@@ -1143,7 +1148,8 @@
         "4.1.1.0": "4.3.0",
         "4.1.1.1": "4.4.1",
         "4.2.0.0": "4.4.0",
-        "4.2.0.1": "4.4.1"
+        "4.2.0.1": "4.4.1",
+        "4.2.0.2": "4.4.3"
       }
     },
     "System.Data.SqlXml": {
@@ -4023,12 +4029,14 @@
     "System.Security.Cryptography.Xml": {
       "StableVersions": [
         "4.4.0",
-        "4.4.1"
+        "4.4.1",
+        "4.4.2"
       ],
       "BaselineVersion": "4.4.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
-        "4.0.0.0": "4.4.0"
+        "4.0.0.0": "4.4.0",
+        "4.0.0.1": "4.4.2"
       }
     },
     "System.Security.Permissions": {

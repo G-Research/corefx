@@ -9,19 +9,19 @@
        These ref versions are pulled from https://github.com/dotnet/versions.
   -->
   <PropertyGroup>
-    <CoreFxCurrentRef>da4e4cec8819dd2b543f8e06da4aa9a44226ab96</CoreFxCurrentRef>
-    <CoreClrCurrentRef>da4e4cec8819dd2b543f8e06da4aa9a44226ab96</CoreClrCurrentRef>
+    <CoreFxCurrentRef>7396c0b23e3955b10bf3522f2e7e9fe509dd4e5e</CoreFxCurrentRef>
+    <CoreClrCurrentRef>7396c0b23e3955b10bf3522f2e7e9fe509dd4e5e</CoreClrCurrentRef>
     <CoreSetupCurrentRef>aac2e06e201666201a5cfda06a296921a1c7f69d</CoreSetupCurrentRef>
     <ExternalCurrentRef>9be29f5804c4798d8b51bd3fed99ea076041aeb2</ExternalCurrentRef>
     <ProjectNTfsCurrentRef>5002272371cd242387eb84c160da4e1449e0f483</ProjectNTfsCurrentRef>
     <ProjectNTfsTestILCCurrentRef>5002272371cd242387eb84c160da4e1449e0f483</ProjectNTfsTestILCCurrentRef>
     <SniCurrentRef>97059fa979a3c8fb8b9fba127c526f15e48c9dde</SniCurrentRef>
-    <StandardCurrentRef>549ba26b2ed7c341a287c63b494e38496319802c</StandardCurrentRef>
+    <StandardCurrentRef>c520a2569b40fc53cf51e4f6970c3e7411adc173</StandardCurrentRef>
   </PropertyGroup>
 
   <!-- Product dependency versions. -->
   <PropertyGroup>
-    <NETStandardLibraryPackageVersion>2.0.1</NETStandardLibraryPackageVersion>
+    <NETStandardLibraryPackageVersion>2.0.3</NETStandardLibraryPackageVersion>
     <NETStandardLibraryPackageId>NETStandard.Library</NETStandardLibraryPackageId>
 
     <!-- SNI runtime package -->
@@ -30,9 +30,9 @@
 
   <!-- Tests/infrastructure dependency versions. -->
   <PropertyGroup>
-    <CoreFxExpectedPrerelease>servicing-25921-02</CoreFxExpectedPrerelease>
-    <MicrosoftNETCorePlatformsPackageVersion>2.0.1</MicrosoftNETCorePlatformsPackageVersion>
-    <MicrosoftNETCoreRuntimeCoreCLRPackageVersion>2.0.4</MicrosoftNETCoreRuntimeCoreCLRPackageVersion>
+    <CoreFxExpectedPrerelease>servicing-26614-01</CoreFxExpectedPrerelease>
+    <MicrosoftNETCorePlatformsPackageVersion>2.0.2</MicrosoftNETCorePlatformsPackageVersion>
+    <MicrosoftNETCoreRuntimeCoreCLRPackageVersion>2.0.8</MicrosoftNETCoreRuntimeCoreCLRPackageVersion>
     <ProjectNTfsExpectedPrerelease>beta-25317-00</ProjectNTfsExpectedPrerelease>
     <ProjectNTfsTestILCExpectedPrerelease>beta-25317-00</ProjectNTfsTestILCExpectedPrerelease>
     <ProjectNTfsTestILCPackageVersion>1.0.0-beta-25317-00</ProjectNTfsTestILCPackageVersion>

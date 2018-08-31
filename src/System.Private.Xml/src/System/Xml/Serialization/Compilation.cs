@@ -172,14 +172,29 @@ namespace System.Xml.Serialization
                 name.Name = serializerName;
                 name.CodeBase = null;
                 name.CultureInfo = CultureInfo.InvariantCulture;
-                string serializerPath = Path.Combine(Path.GetDirectoryName(type.Assembly.Location), serializerName + ".dll");
+
+                string serializerPath = null;
+
                 try
                 {
-                    serializer = Assembly.LoadFile(serializerPath);
+                    if (!string.IsNullOrEmpty(type.Assembly.Location))
+                    {
+                        serializerPath = Path.Combine(Path.GetDirectoryName(type.Assembly.Location), serializerName + ".dll");
+                    }
+
+                    if ((string.IsNullOrEmpty(serializerPath) || !File.Exists(serializerPath)) && !string.IsNullOrEmpty(Assembly.GetEntryAssembly().Location))
+                    {
+                        serializerPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), serializerName + ".dll");
+                    }
+
+                    if (!string.IsNullOrEmpty(serializerPath))
+                    {
+                        serializer = Assembly.LoadFile(serializerPath);
+                    }
                 }
                 catch (Exception e)
                 {
-                    if (e is OutOfMemoryException)
+                    if (e is StackOverflowException || e is OutOfMemoryException)
                     {
                         throw;
                     }
@@ -190,6 +205,7 @@ namespace System.Xml.Serialization
                         return null;
                     }
                 }
+
                 if (serializer == null)
                 {
                     return null;
@@ -233,12 +249,6 @@ namespace System.Xml.Serialization
         }
 
 #if XMLSERIALIZERGENERATOR
-        internal static class ThisAssembly
-        {
-            internal const string Version = "1.0.0.0";
-            internal const string InformationalVersion = "1.0.0.0";
-        }
-
         private static string GenerateAssemblyId(Type type)
         {
             Module[] modules = type.Assembly.GetModules();
@@ -260,7 +270,7 @@ namespace System.Xml.Serialization
             return sb.ToString();
         }
 
-        internal static bool GenerateSerializerFile(XmlMapping[] xmlMappings, Type[] types, string defaultNamespace, Assembly assembly, Hashtable assemblies, string codePath)
+        internal static bool GenerateSerializerToStream(XmlMapping[] xmlMappings, Type[] types, string defaultNamespace, Assembly assembly, Hashtable assemblies, Stream stream)
         {
             var compiler = new Compiler();
             try
@@ -394,27 +404,12 @@ namespace System.Xml.Serialization
                 readerCodeGen.GenerateSerializerContract("XmlSerializerContract", xmlMappings, types, readerClass, readMethodNames, writerClass, writeMethodNames, serializers);
                 writer.Indent--;
                 writer.WriteLine("}");
-                string serializerName = XmlSerializer.GetXmlSerializerAssemblyName(types[0], null);
-                string location = Path.Combine(codePath, serializerName + ".cs");
-                try
-                {
-                    if (File.Exists(location))
-                    {
-                        File.Delete(location);
-                    }
 
-                    using (FileStream fs = File.Create(location))
-                    {
-                        string codecontent = compiler.Source.ToString();
-                        Byte[] info = new UTF8Encoding(true).GetBytes(codecontent);
-                        fs.Write(info, 0, info.Length);
-                        return true;
-                    }
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    throw new UnauthorizedAccessException(SR.Format(SR.DirectoryAccessDenied, location));
-                }
+                string codecontent = compiler.Source.ToString();
+                Byte[] info = new UTF8Encoding(true).GetBytes(codecontent);
+                stream.Write(info, 0, info.Length);
+                stream.Flush();
+                return true;
             }
             finally
             {
