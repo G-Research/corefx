@@ -455,6 +455,21 @@ namespace System.Net.Sockets.Tests
         }
 
         [Fact]
+        public async Task ReadWrite_Byte_Success()
+        {
+            await RunWithConnectedNetworkStreamsAsync(async (server, client) =>
+            {
+                for (byte i = 0; i < 10; i++)
+                {
+                    Task<int> read = Task.Run(() => client.ReadByte());
+                    Task write = Task.Run(() => server.WriteByte(i));
+                    await Task.WhenAll(read, write);
+                    Assert.Equal(i, await read);
+                }
+            });
+        }
+
+        [Fact]
         public async Task ReadWrite_Array_Success()
         {
             await RunWithConnectedNetworkStreamsAsync((server, client) =>
@@ -670,7 +685,6 @@ namespace System.Net.Sockets.Tests
             });
         }
 
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Optimized .NET Core CopyToAsync doesn't use Begin/EndRead, skipping code that throws ObjectDisposedException on netfx")]
         [Fact]
         public async Task CopyToAsync_DisposedSourceStream_ThrowsOnWindows_NoThrowOnUnix()
         {

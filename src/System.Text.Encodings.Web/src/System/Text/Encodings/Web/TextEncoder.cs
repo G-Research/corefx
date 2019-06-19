@@ -130,8 +130,12 @@ namespace System.Text.Encodings.Web
 
             if (firstCharacterToEncode > 0)
             {
-                int bytesToCopy = firstCharacterToEncode + firstCharacterToEncode;
-                BufferInternal.MemoryCopy(value, buffer, bytesToCopy, bytesToCopy);
+                Debug.Assert(firstCharacterToEncode <= valueLength);
+                Buffer.MemoryCopy(source: value,
+                    destination: buffer,
+                    destinationSizeInBytes: sizeof(char) * bufferLength,
+                    sourceBytesToCopy: sizeof(char) * firstCharacterToEncode);
+
                 totalWritten += firstCharacterToEncode;
                 bufferLength -= firstCharacterToEncode;
                 buffer += firstCharacterToEncode;
@@ -333,7 +337,8 @@ namespace System.Text.Encodings.Web
 
             // this loop processes character pairs (in case they are surrogates).
             // there is an if block below to process single last character.
-            for (int secondCharIndex = 1; secondCharIndex < valueLength; secondCharIndex++)
+            int secondCharIndex;
+            for (secondCharIndex = 1; secondCharIndex < valueLength; secondCharIndex++)
             {
                 if (!wasSurrogatePair)
                 {
@@ -366,7 +371,7 @@ namespace System.Text.Encodings.Web
                 }
             }
 
-            if (!wasSurrogatePair)
+            if (!wasSurrogatePair || (secondCharIndex == valueLength))
             {
                 firstChar = value[valueLength - 1];
                 int nextScalar = UnicodeHelpers.GetScalarValueFromUtf16(firstChar, null, out wasSurrogatePair);

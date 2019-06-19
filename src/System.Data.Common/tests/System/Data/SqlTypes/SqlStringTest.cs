@@ -32,11 +32,12 @@ using System.Xml;
 using System.Xml.Serialization;
 using System.Text;
 using System.Diagnostics;
+using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 
 namespace System.Data.Tests.SqlTypes
 {
-    public class SqlStringTest : RemoteExecutorTestBase
+    public class SqlStringTest
     {
         private SqlString _test1;
         private SqlString _test2;
@@ -172,7 +173,7 @@ namespace System.Data.Tests.SqlTypes
         [Fact]
         public void Properties()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CultureInfo.CurrentCulture = new CultureInfo("en-AU");
                 var one = new SqlString("First TestString");
@@ -196,7 +197,7 @@ namespace System.Data.Tests.SqlTypes
                 // Value
                 Assert.Equal("First TestString", one.Value);
 
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -662,7 +663,7 @@ namespace System.Data.Tests.SqlTypes
         public void SqlDoubleToSqlString()
         {
             SqlDouble TestDouble = new SqlDouble(64E+64);
-            Assert.Equal("6.4E+65", ((SqlString)TestDouble).Value);
+            Assert.Equal(6.4E+65.ToString(), ((SqlString)TestDouble).Value);
         }
 
         [Fact]
@@ -728,14 +729,14 @@ namespace System.Data.Tests.SqlTypes
         public void SqlMoneyToSqlString()
         {
             SqlMoney TestMoney = new SqlMoney(646464.6464);
-            Assert.Equal("646464.6464", ((SqlString)TestMoney).Value);
+            Assert.Equal(646464.6464.ToString(), ((SqlString)TestMoney).Value);
         }
 
         [Fact]
         public void SqlSingleToSqlString()
         {
             SqlSingle TestSingle = new SqlSingle(3E+20);
-            Assert.Equal("3E+20", ((SqlString)TestSingle).Value);
+            Assert.Equal(3E+20.ToString(), ((SqlString)TestSingle).Value);
         }
 
         [Fact]

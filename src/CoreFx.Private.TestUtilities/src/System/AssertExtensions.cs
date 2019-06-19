@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Xunit;
@@ -35,8 +36,25 @@ namespace System
                 IsFullFramework ?
                 netFxParamName : netCoreParamName;
 
-            if (!RuntimeInformation.FrameworkDescription.StartsWith(".NET Native"))
-                Assert.Equal(expectedParamName, exception.ParamName);
+            Assert.Equal(expectedParamName, exception.ParamName);
+        }
+
+        public static void Throws<T>(string netCoreParamName, string netFxParamName, Func<object> testCode)
+            where T : ArgumentException
+        {
+            T exception = Assert.Throws<T>(testCode);
+
+            if (netFxParamName == null && IsFullFramework)
+            {
+                // Param name varies between NETFX versions -- skip checking it
+                return;
+            }
+
+            string expectedParamName =
+                IsFullFramework ?
+                netFxParamName : netCoreParamName;
+
+            Assert.Equal(expectedParamName, exception.ParamName);
         }
 
         public static T Throws<T>(string paramName, Action action)
@@ -44,8 +62,15 @@ namespace System
         {
             T exception = Assert.Throws<T>(action);
 
-            if (!RuntimeInformation.FrameworkDescription.StartsWith(".NET Native"))
-                Assert.Equal(paramName, exception.ParamName);
+            Assert.Equal(paramName, exception.ParamName);
+
+            return exception;
+        }
+
+        public static T Throws<T>(Action action)
+            where T : Exception
+        {
+            T exception = Assert.Throws<T>(action);
 
             return exception;
         }
@@ -55,8 +80,7 @@ namespace System
         {
             T exception = Assert.Throws<T>(testCode);
 
-            if (!RuntimeInformation.FrameworkDescription.StartsWith(".NET Native"))
-                Assert.Equal(paramName, exception.ParamName);
+            Assert.Equal(paramName, exception.ParamName);
 
             return exception;
         }
@@ -66,21 +90,56 @@ namespace System
         {
             T exception = await Assert.ThrowsAsync<T>(testCode);
 
-            if (!RuntimeInformation.FrameworkDescription.StartsWith(".NET Native"))
-                Assert.Equal(paramName, exception.ParamName);
+            Assert.Equal(paramName, exception.ParamName);
 
             return exception;
         }
 
-        public static void Throws<TNetCoreExceptionType, TNetFxExceptionType>(string paramName, Action action) 
-            where TNetCoreExceptionType : ArgumentException 
-            where TNetFxExceptionType : ArgumentException
+        public static void Throws<TNetCoreExceptionType, TNetFxExceptionType>(string paramName, Action action)
+            where TNetCoreExceptionType : ArgumentException
+            where TNetFxExceptionType : Exception
         {
-            Throws<TNetCoreExceptionType, TNetFxExceptionType>(paramName, paramName, action);
+            if (IsFullFramework)
+            {
+                // Support cases where the .NET Core exception derives from ArgumentException
+                // but the .NET Framework exception is not.
+                if (typeof(ArgumentException).IsAssignableFrom(typeof(TNetFxExceptionType)))
+                {
+                    Exception exception = Assert.Throws(typeof(TNetFxExceptionType), action);
+                    Assert.Equal(paramName, ((ArgumentException)exception).ParamName);
+                }
+                else
+                {
+                    AssertExtensions.Throws<TNetFxExceptionType>(action);
+                }
+            }
+            else
+            {
+                AssertExtensions.Throws<TNetCoreExceptionType>(paramName, action);
+            }
+        }
+
+        public static Exception Throws<TNetCoreExceptionType, TNetFxExceptionType>(Action action)
+            where TNetCoreExceptionType : Exception
+            where TNetFxExceptionType : Exception
+        {
+            return Throws(typeof(TNetCoreExceptionType), typeof(TNetFxExceptionType), action);
+        }
+
+        public static Exception Throws(Type netCoreExceptionType, Type netFxExceptionType, Action action)
+        {
+            if (IsFullFramework)
+            {
+                return Assert.Throws(netFxExceptionType, action);
+            }
+            else
+            {
+                return Assert.Throws(netCoreExceptionType, action);
+            }
         }
 
         public static void Throws<TNetCoreExceptionType, TNetFxExceptionType>(string netCoreParamName, string netFxParamName, Action action)
-            where TNetCoreExceptionType : ArgumentException 
+            where TNetCoreExceptionType : ArgumentException
             where TNetFxExceptionType : ArgumentException
         {
             if (IsFullFramework)
@@ -150,6 +209,24 @@ namespace System
                 return message;
             else
                 return $"{message} {userMessage}";
+        }
+        
+        /// <summary>
+        /// Tests whether the specified string contains the specified substring
+        /// and throws an exception if the substring does not occur within the
+        /// test string or if either string or substring is null.
+        /// </summary>
+        /// <param name="value">
+        /// The string that is expected to contain <paramref name="substring"/>.
+        /// </param>
+        /// <param name="substring">
+        /// The string expected to occur within <paramref name="value"/>.
+        /// </param>
+        public static void Contains(string value, string substring)
+        {
+            Assert.NotNull(value);
+            Assert.NotNull(substring);
+            Assert.Contains(substring, value, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -251,6 +328,15 @@ namespace System
                 string expectedString = string.Join(", ", expected);
                 string actualString = string.Join(", ", actual);
                 throw new AssertActualExpectedException(expectedString, actualString, null);
+            }
+        }
+
+        /// <summary>Validates that the two sets contains the same elements. XUnit doesn't display the full collections.</summary>
+        public static void Equal<T>(HashSet<T> expected, HashSet<T> actual)
+        {
+            if (!actual.SetEquals(expected))
+            {
+                throw new XunitException($"Expected: {string.Join(", ", expected)}{Environment.NewLine}Actual: {string.Join(", ", actual)}");
             }
         }
     }

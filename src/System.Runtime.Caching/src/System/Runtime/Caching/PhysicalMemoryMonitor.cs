@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Diagnostics;
 using System.Runtime.Caching.Configuration;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -12,7 +13,7 @@ namespace System.Runtime.Caching
     // PhysicalMemoryMonitor monitors the amound of physical memory used on the machine
     // and helps us determine when to drop entries to avoid paging and GC thrashing.
     // The limit is configurable (see ConfigUtil.cs).
-    internal sealed class PhysicalMemoryMonitor : MemoryMonitor
+    internal sealed partial class PhysicalMemoryMonitor : MemoryMonitor
     {
         private const int MIN_TOTAL_MEMORY_TRIM_PERCENT = 10;
         private static readonly long s_TARGET_TOTAL_MEMORY_TRIM_INTERVAL_TICKS = 5 * TimeSpan.TicksPerMinute;
@@ -48,7 +49,6 @@ namespace System.Runtime.Caching
             */
 
             long memory = TotalPhysical;
-            Dbg.Assert(memory != 0, "memory != 0");
             if (memory >= 0x100000000)
             {
                 _pressureHigh = 99;
@@ -76,19 +76,6 @@ namespace System.Runtime.Caching
             InitHistory();
         }
 
-        protected override int GetCurrentPressure()
-        {
-            Interop.Kernel32.MEMORYSTATUSEX memoryStatusEx = default;
-            memoryStatusEx.dwLength = (uint)Marshal.SizeOf(typeof(Interop.Kernel32.MEMORYSTATUSEX));
-            if (Interop.Kernel32.GlobalMemoryStatusEx(out memoryStatusEx) == 0)
-            {
-                return 0;
-            }
-
-            int memoryLoad = (int)memoryStatusEx.dwMemoryLoad;
-            return memoryLoad;
-        }
-
         internal override int GetPercentToTrim(DateTime lastTrimTime, int lastTrimPercent)
         {
             int percent = 0;
@@ -105,10 +92,11 @@ namespace System.Runtime.Caching
                 }
 
 #if PERF
-                Debug.WriteLine(String.Format("PhysicalMemoryMonitor.GetPercentToTrim: percent={0:N}, lastTrimPercent={1:N}, secondsSinceTrim={2:N}\n",
+                Debug.WriteLine(string.Format("PhysicalMemoryMonitor.GetPercentToTrim: percent={0:N}, lastTrimPercent={1:N}, secondsSinceTrim={2:N}{3}",
                                                     percent,
                                                     lastTrimPercent,
-                                                    ticksSinceTrim/TimeSpan.TicksPerSecond));
+                                                    ticksSinceTrim/TimeSpan.TicksPerSecond,
+                                                    Environment.NewLine));
 #endif
             }
 
@@ -124,10 +112,8 @@ namespace System.Runtime.Caching
             }
             _pressureHigh = Math.Max(3, physicalMemoryLimitPercentage);
             _pressureLow = Math.Max(1, _pressureHigh - 9);
-#if DEBUG
             Dbg.Trace("MemoryCacheStats", "PhysicalMemoryMonitor.SetLimit: _pressureHigh=" + _pressureHigh +
                         ", _pressureLow=" + _pressureLow);
-#endif
         }
     }
 }

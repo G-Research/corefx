@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -24,21 +24,18 @@ public static partial class XmlSerializerTests
 
     static XmlSerializerTests()
     {
-        if (!PlatformDetection.IsFullFramework)
-        {
-            MethodInfo method = typeof(XmlSerializer).GetMethod(SerializationModeSetterName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-            Assert.True(method != null, $"No method named {SerializationModeSetterName}");
+        MethodInfo method = typeof(XmlSerializer).GetMethod(SerializationModeSetterName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.True(method != null, $"No method named {SerializationModeSetterName}");
 #if ReflectionOnly
-            method.Invoke(null, new object[] { 1 });
+        method.Invoke(null, new object[] { 1 });
 #endif
 #if XMLSERIALIZERGENERATORTESTS
-            method.Invoke(null, new object[] { 3 });
+        method.Invoke(null, new object[] { 3 });
 #endif
-        }
     }
 #endif
 
-    private static bool IsTimeSpanSerializationAvailable => !PlatformDetection.IsFullFramework || (AppContext.TryGetSwitch("Switch.System.Xml.EnableTimeSpanSerialization", out bool result) && result);
+    private static bool IsTimeSpanSerializationAvailable => true;
 
     [Fact]
     public static void Xml_TypeWithDateTimePropertyAsXmlTime()
@@ -477,15 +474,15 @@ string.Format(@"<?xml version=""1.0"" encoding=""utf-8""?>
     public static void XML_TypeWithXmlSchemaFormAttribute()
     {
         var value = new TypeWithXmlSchemaFormAttribute() { NoneSchemaFormListProperty = new List<string> { "abc" }, QualifiedSchemaFormListProperty = new List<bool> { true }, UnqualifiedSchemaFormListProperty = new List<int> { 1 } };
-        var acutal = SerializeAndDeserialize<TypeWithXmlSchemaFormAttribute>(value,
+        var actual = SerializeAndDeserialize<TypeWithXmlSchemaFormAttribute>(value,
 @"<?xml version=""1.0""?><TypeWithXmlSchemaFormAttribute xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema""><UnqualifiedSchemaFormListProperty><int>1</int></UnqualifiedSchemaFormListProperty><NoneSchemaFormListProperty><NoneParameter>abc</NoneParameter></NoneSchemaFormListProperty><QualifiedSchemaFormListProperty><QualifiedParameter>true</QualifiedParameter></QualifiedSchemaFormListProperty></TypeWithXmlSchemaFormAttribute>");
 
-        Assert.StrictEqual(value.NoneSchemaFormListProperty.Count, acutal.NoneSchemaFormListProperty.Count);
-        Assert.StrictEqual(value.NoneSchemaFormListProperty[0], acutal.NoneSchemaFormListProperty[0]);
-        Assert.StrictEqual(value.UnqualifiedSchemaFormListProperty.Count, acutal.UnqualifiedSchemaFormListProperty.Count);
-        Assert.StrictEqual(value.UnqualifiedSchemaFormListProperty[0], acutal.UnqualifiedSchemaFormListProperty[0]);
-        Assert.StrictEqual(value.QualifiedSchemaFormListProperty.Count, acutal.QualifiedSchemaFormListProperty.Count);
-        Assert.StrictEqual(value.QualifiedSchemaFormListProperty[0], acutal.QualifiedSchemaFormListProperty[0]);
+        Assert.StrictEqual(value.NoneSchemaFormListProperty.Count, actual.NoneSchemaFormListProperty.Count);
+        Assert.StrictEqual(value.NoneSchemaFormListProperty[0], actual.NoneSchemaFormListProperty[0]);
+        Assert.StrictEqual(value.UnqualifiedSchemaFormListProperty.Count, actual.UnqualifiedSchemaFormListProperty.Count);
+        Assert.StrictEqual(value.UnqualifiedSchemaFormListProperty[0], actual.UnqualifiedSchemaFormListProperty[0]);
+        Assert.StrictEqual(value.QualifiedSchemaFormListProperty.Count, actual.QualifiedSchemaFormListProperty.Count);
+        Assert.StrictEqual(value.QualifiedSchemaFormListProperty[0], actual.QualifiedSchemaFormListProperty[0]);
     }
 
     [Fact]
@@ -684,6 +681,40 @@ string.Format(@"<?xml version=""1.0"" encoding=""utf-8""?>
         Assert.NotNull(deserializedObj);
         Assert.Equal(obj.TimeSpanProperty, deserializedObj.TimeSpanProperty);
         Assert.Equal(obj.TimeSpanProperty2, deserializedObj.TimeSpanProperty2);
+    }
+
+    [Fact]
+    public static void Xml_DeserializeTypeWithEmptyTimeSpanProperty()
+    {
+        string xml = 
+            @"<?xml version=""1.0""?>
+            <TypeWithTimeSpanProperty xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"">
+            <TimeSpanProperty />
+            </TypeWithTimeSpanProperty>";
+        XmlSerializer serializer = new XmlSerializer(typeof(TypeWithTimeSpanProperty));
+
+        using (StringReader reader = new StringReader(xml))
+        {
+            TypeWithTimeSpanProperty deserializedObj = (TypeWithTimeSpanProperty)serializer.Deserialize(reader);
+            Assert.NotNull(deserializedObj);
+            Assert.Equal(default(TimeSpan), deserializedObj.TimeSpanProperty);
+        }
+    }
+
+    [Fact]
+    public static void Xml_DeserializeEmptyTimeSpanType()
+    {
+        string xml =
+    @"<?xml version=""1.0""?>
+     <TimeSpan />";
+        XmlSerializer serializer = new XmlSerializer(typeof(TimeSpan));
+
+        using (StringReader reader = new StringReader(xml))
+        {
+            TimeSpan deserializedObj = (TimeSpan)serializer.Deserialize(reader);
+            Assert.NotNull(deserializedObj);
+            Assert.Equal(default(TimeSpan), deserializedObj);
+        }
     }
 
     [Fact]
@@ -905,7 +936,6 @@ string.Format(@"<?xml version=""1.0"" encoding=""utf-8""?>
     }
 
     [Fact]
-    [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "dotnet/corefx #18964")]
     public static void Xml_Soap_TypeWithEnumFlagPropertyHavingDefaultValue()
     {
         var mapping = new SoapReflectionImporter().ImportTypeMapping(typeof(TypeWithEnumFlagPropertyHavingDefaultValue));
@@ -946,7 +976,6 @@ string.Format(@"<?xml version=""1.0"" encoding=""utf-8""?>
     }
 
     [Fact]
-    [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "dotnet/corefx #18964")]
     public static void Xml_Soap_TypeWithXmlQualifiedName()
     {
         var mapping = new SoapReflectionImporter().ImportTypeMapping(typeof(TypeWithXmlQualifiedName));
@@ -1041,7 +1070,7 @@ string.Format(@"<?xml version=""1.0"" encoding=""utf-8""?>
     }
 
     [Fact]
-    static void Xml_TypeWithTypesHavingCustomFormatter()
+    public static void Xml_TypeWithTypesHavingCustomFormatter()
     {
         var str = "The quick brown fox jumps over the lazy dog.";
         var value = new TypeWithTypesHavingCustomFormatter()
@@ -1541,7 +1570,7 @@ string.Format(@"<?xml version=""1.0"" encoding=""utf-8""?>
 
         attrOverrides = new XmlAttributeOverrides();
         attrs = new XmlAttributes();
-        Object defaultAnimal = "Cat";
+        object defaultAnimal = "Cat";
         attrs.XmlDefaultValue = defaultAnimal;
         attrOverrides.Add(typeof(Pet), "Animal", attrs);
         attrs = new XmlAttributes();
@@ -1584,7 +1613,6 @@ string.Format(@"<?xml version=""1.0"" encoding=""utf-8""?>
     }
 
     [Fact]
-    [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "dotnet/corefx #18964")]
     public static void Xml_Soap_TypeWithMyCollectionField()
     {
         XmlTypeMapping myTypeMapping = new SoapReflectionImporter().ImportTypeMapping(typeof(TypeWithMyCollectionField));
@@ -1611,6 +1639,206 @@ string.Format(@"<?xml version=""1.0"" encoding=""utf-8""?>
 </DefaultValuesSetToNaN>");
         Assert.NotNull(actual);
         Assert.Equal(value, actual);
+    }
+
+    [Fact]
+    public static void Xml_DefaultValueAttributeSetToPositiveInfinityTest()
+    {
+        var value = new DefaultValuesSetToPositiveInfinity();
+        var actual = SerializeAndDeserialize(value,
+@"<?xml version=""1.0""?>
+<DefaultValuesSetToPositiveInfinity xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"">
+  <DoubleField>0</DoubleField>
+  <SingleField>0</SingleField>
+  <DoubleProp>0</DoubleProp>
+  <FloatProp>0</FloatProp>
+</DefaultValuesSetToPositiveInfinity>");
+        Assert.NotNull(actual);
+        Assert.Equal(value, actual);
+    }
+
+    [Fact]
+    public static void Xml_DefaultValueAttributeSetToNegativeInfinityTest()
+    {
+        var value = new DefaultValuesSetToNegativeInfinity();
+        var actual = SerializeAndDeserialize(value,
+@"<?xml version=""1.0""?>
+<DefaultValuesSetToNegativeInfinity xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"">
+  <DoubleField>0</DoubleField>
+  <SingleField>0</SingleField>
+  <DoubleProp>0</DoubleProp>
+  <FloatProp>0</FloatProp>
+</DefaultValuesSetToNegativeInfinity>");
+        Assert.NotNull(actual);
+        Assert.Equal(value, actual);
+    }
+
+    [ActiveIssue(28321)]
+    [Fact]
+    public static void SerializeWithDefaultValueSetToNaNTest()
+    {
+        var value = new DefaultValuesSetToNaN();
+        value.DoubleField = double.NaN;
+        value.SingleField = float.NaN;
+        value.FloatProp = float.NaN;
+        value.DoubleProp = double.NaN;
+
+        bool result=SerializeWithDefaultValue(value,
+@"<?xml version=""1.0""?>
+<DefaultValuesSetToNaN xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" />");
+        Assert.True(result);
+    }
+
+    [Fact]
+    public static void SerializeWithDefaultValueSetToPositiveInfinityTest()
+    {
+        var value = new DefaultValuesSetToPositiveInfinity();
+        value.DoubleField = double.PositiveInfinity;
+        value.SingleField = float.PositiveInfinity;
+        value.FloatProp = float.PositiveInfinity;
+        value.DoubleProp = double.PositiveInfinity;
+
+        bool result = SerializeWithDefaultValue(value,
+@"<?xml version=""1.0""?>
+<DefaultValuesSetToPositiveInfinity xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" />");
+        Assert.True(result);
+    }
+
+    [Fact]
+    public static void SerializeWithDefaultValueSetToNegativeInfinityTest()
+    {
+        var value = new DefaultValuesSetToNegativeInfinity();
+        value.DoubleField = double.NegativeInfinity;
+        value.SingleField = float.NegativeInfinity;
+        value.FloatProp = float.NegativeInfinity;
+        value.DoubleProp = double.NegativeInfinity;
+
+        bool result = SerializeWithDefaultValue(value,
+        @"<?xml version=""1.0""?>
+<DefaultValuesSetToNegativeInfinity xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" />");
+        Assert.True(result);
+    }
+
+    [Fact]
+    public static void DeserializeIDREFSIntoStringTest()
+    {
+        string xmlstring = @"<?xml version = ""1.0"" encoding = ""utf-8"" ?><Document xmlns = ""http://example.com"" id = ""ID1"" refs=""ID1 ID2 ID3"" ></Document>";
+        Stream ms = GenerateStreamFromString(xmlstring);
+        XmlSerializer ser = new XmlSerializer(typeof(MsgDocumentType));
+        var value = (MsgDocumentType)ser.Deserialize(ms);
+        Assert.NotNull(value);
+        Assert.Equal("ID1", value.Id);
+        Assert.NotNull(value.Refs);
+        Assert.Equal(3, value.Refs.Count());
+        Assert.Equal("ID1", value.Refs[0]);
+        Assert.Equal("ID2", value.Refs[1]);
+        Assert.Equal("ID3", value.Refs[2]);
+    }
+
+    private static bool SerializeWithDefaultValue<T>(T value, string baseline)
+    {
+        XmlSerializer serializer = new XmlSerializer(typeof(T));
+        using (MemoryStream ms = new MemoryStream())
+        {
+            serializer.Serialize(ms, value);
+            ms.Position = 0;
+            string output = new StreamReader(ms).ReadToEnd();
+            Utils.CompareResult result = Utils.Compare(baseline, output);
+            return result.Equal;
+        }
+    }
+
+    [Fact]
+    public static void Xml_TypeWithMismatchBetweenAttributeAndPropertyType()
+    {
+        var value = new TypeWithMismatchBetweenAttributeAndPropertyType();
+        var actual = SerializeAndDeserialize(value,
+@"<?xml version=""1.0""?><RootElement xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" IntValue=""120"" />");
+        Assert.StrictEqual(value.IntValue, actual.IntValue);
+    }
+
+    [Fact]
+    public static void Xml_XsdValidationAndDeserialization()
+    {
+        var xsdstring = @"<?xml version='1.0' encoding='utf-8'?>
+<xs:schema attributeFormDefault='unqualified' elementFormDefault='unqualified' xmlns:xs='http://www.w3.org/2001/XMLSchema'>
+  <xs:element name='RootClass'>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name='Parameters' type='parameters' minOccurs='1' maxOccurs='unbounded' />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name='parameters'>
+    <xs:sequence>
+      <xs:element name='Parameter' type='parameter' minOccurs='1' maxOccurs='unbounded' />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name='parameter'>
+    <xs:attribute type='xs:string' name='Name' use='required' />
+  </xs:complexType>
+  <xs:complexType name='stringParameter' >
+    <xs:complexContent>
+      <xs:extension base='parameter'>
+        <xs:sequence>
+          <xs:element name='Value' minOccurs='0' maxOccurs='1'/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</xs:schema>
+";
+        var param = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+  "<RootClass xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
+        "<Parameters>" +
+            "<Parameter xsi:type=\"stringParameter\" Name=\"SomeName\">" +
+                "<Value />" +
+            "</Parameter>" +
+         "</Parameters>" +
+    "</RootClass>";
+
+        using (var stream = new MemoryStream())
+        {
+            using (var writer = new StreamWriter(stream))
+            {
+                writer.Write(param);
+                writer.Flush();
+                stream.Position = 0;
+
+                var xmlReaderSettings = new XmlReaderSettings();
+                xmlReaderSettings.ValidationType = ValidationType.Schema;
+                xmlReaderSettings.ValidationEventHandler += (sender, args) =>
+                {
+                    throw new XmlSchemaValidationException(args.Message);
+                };
+                xmlReaderSettings.Schemas.Add(null, XmlReader.Create(new StringReader(xsdstring)));
+
+                var xmlReader = XmlReader.Create(stream, xmlReaderSettings);
+
+                var overrides = new XmlAttributeOverrides();
+                var parametersXmlAttribute = new XmlAttributes { XmlType = new XmlTypeAttribute("stringParameter") };
+                overrides.Add(typeof(Parameter<string>), parametersXmlAttribute);
+
+                var serializer = new XmlSerializer(typeof(RootClass), overrides);
+                var result=(RootClass)serializer.Deserialize(xmlReader);
+
+                Assert.Equal("SomeName", result.Parameters[0].Name);
+                Assert.Equal(string.Empty, ((Parameter<string>)result.Parameters[0]).Value);
+            }
+        }
+    }
+
+    [Fact]
+    public static void Xml_TypeWithSpecialCharacterInStringMember()
+    {
+        TypeA x = new TypeA() { Name = "Lily&Lucy" };
+        TypeA y = SerializeAndDeserialize<TypeA>(x,
+@"<?xml version=""1.0""?>
+<TypeA xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"">
+  <Name>Lily&amp;Lucy</Name>
+</TypeA>");
+        Assert.NotNull(y);
+        Assert.StrictEqual(x.Name, y.Name);
     }
 
     private static readonly string s_defaultNs = "http://tempuri.org/";

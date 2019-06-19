@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Buffers;
 using System.Text;
 using Xunit;
 
@@ -25,7 +24,7 @@ namespace System.Buffers.Text.Tests
                 Base64TestHelper.InitalizeDecodableBytes(source, numBytes);
 
                 Span<byte> decodedBytes = new byte[Base64.GetMaxDecodedFromUtf8Length(source.Length)];
-                Assert.Equal(OperationStatus.Done, 
+                Assert.Equal(OperationStatus.Done,
                     Base64.DecodeFromUtf8(source, decodedBytes, out int consumed, out int decodedByteCount));
                 Assert.Equal(source.Length, consumed);
                 Assert.Equal(decodedBytes.Length, decodedByteCount);
@@ -39,10 +38,24 @@ namespace System.Buffers.Text.Tests
             Span<byte> source = Span<byte>.Empty;
             Span<byte> decodedBytes = new byte[Base64.GetMaxDecodedFromUtf8Length(source.Length)];
 
-            Assert.Equal(OperationStatus.Done, 
+            Assert.Equal(OperationStatus.Done,
                 Base64.DecodeFromUtf8(source, decodedBytes, out int consumed, out int decodedByteCount));
             Assert.Equal(source.Length, consumed);
             Assert.Equal(decodedBytes.Length, decodedByteCount);
+            Assert.True(Base64TestHelper.VerifyDecodingCorrectness(source.Length, decodedBytes.Length, source, decodedBytes));
+        }
+
+        [Fact]
+        public void DecodeGuid()
+        {
+            Span<byte> source = new byte[24];
+            Span<byte> decodedBytes = Guid.NewGuid().ToByteArray();
+            Base64.EncodeToUtf8(decodedBytes, source, out int _, out int _);
+
+            Assert.Equal(OperationStatus.Done,
+                Base64.DecodeFromUtf8(source, decodedBytes, out int consumed, out int decodedByteCount));
+            Assert.Equal(24, consumed);
+            Assert.Equal(16, decodedByteCount);
             Assert.True(Base64TestHelper.VerifyDecodingCorrectness(source.Length, decodedBytes.Length, source, decodedBytes));
         }
 
@@ -63,7 +76,7 @@ namespace System.Buffers.Text.Tests
                 Span<byte> decodedBytes = new byte[Base64.GetMaxDecodedFromUtf8Length(source.Length)];
                 int expectedConsumed = source.Length / 4 * 4; // only consume closest multiple of four since isFinalBlock is false
 
-                Assert.Equal(OperationStatus.NeedMoreData, 
+                Assert.Equal(OperationStatus.NeedMoreData,
                     Base64.DecodeFromUtf8(source, decodedBytes, out int consumed, out int decodedByteCount, isFinalBlock: false));
                 Assert.Equal(expectedConsumed, consumed);
                 Assert.Equal(decodedBytes.Length, decodedByteCount);
@@ -152,7 +165,7 @@ namespace System.Buffers.Text.Tests
             // 123-255
             byte[] invalidBytes = Base64TestHelper.InvalidBytes;
             Assert.Equal(byte.MaxValue + 1 - 64, invalidBytes.Length); // 192
-            
+
             for (int j = 0; j < 8; j++)
             {
                 Span<byte> source = new byte[8] { 50, 50, 50, 50, 80, 80, 80, 80 }; // valid input - "2222PPPP"
@@ -161,14 +174,15 @@ namespace System.Buffers.Text.Tests
                 for (int i = 0; i < invalidBytes.Length; i++)
                 {
                     // Don't test padding (byte 61 i.e. '='), which is tested in DecodingInvalidBytesPadding
-                    if (invalidBytes[i] == Base64TestHelper.s_encodingPad) continue;
+                    if (invalidBytes[i] == Base64TestHelper.s_encodingPad)
+                        continue;
 
                     // replace one byte with an invalid input
                     source[j] = invalidBytes[i];
 
                     Assert.Equal(OperationStatus.InvalidData,
                         Base64.DecodeFromUtf8(source, decodedBytes, out int consumed, out int decodedByteCount));
-                    
+
                     if (j < 4)
                     {
                         Assert.Equal(0, consumed);
@@ -303,7 +317,7 @@ namespace System.Buffers.Text.Tests
                 source[11] = Base64TestHelper.s_encodingPad;
 
                 Span<byte> decodedBytes = new byte[6];
-                Assert.Equal(OperationStatus.DestinationTooSmall, 
+                Assert.Equal(OperationStatus.DestinationTooSmall,
                     Base64.DecodeFromUtf8(source, decodedBytes, out int consumed, out int written));
                 int expectedConsumed = 8;
                 Assert.Equal(expectedConsumed, consumed);
@@ -317,7 +331,7 @@ namespace System.Buffers.Text.Tests
                 source[11] = Base64TestHelper.s_encodingPad;
 
                 Span<byte> decodedBytes = new byte[7];
-                Assert.Equal(OperationStatus.DestinationTooSmall, 
+                Assert.Equal(OperationStatus.DestinationTooSmall,
                     Base64.DecodeFromUtf8(source, decodedBytes, out int consumed, out int written));
                 int expectedConsumed = 8;
                 Assert.Equal(expectedConsumed, consumed);
@@ -336,10 +350,10 @@ namespace System.Buffers.Text.Tests
             int requiredSize = Base64.GetMaxDecodedFromUtf8Length(source.Length);
 
             Span<byte> decodedBytes = new byte[outputSize];
-            Assert.Equal(OperationStatus.DestinationTooSmall, 
+            Assert.Equal(OperationStatus.DestinationTooSmall,
                 Base64.DecodeFromUtf8(source, decodedBytes, out int consumed, out int decodedByteCount));
             int expectedConsumed = decodedBytes.Length / 3 * 4;
-            Assert.Equal(expectedConsumed, consumed);             
+            Assert.Equal(expectedConsumed, consumed);
             Assert.Equal(decodedBytes.Length, decodedByteCount);
             Assert.True(Base64TestHelper.VerifyDecodingCorrectness(expectedConsumed, decodedBytes.Length, source, decodedBytes));
 
@@ -381,7 +395,6 @@ namespace System.Buffers.Text.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => Base64.GetMaxDecodedFromUtf8Length(int.MinValue));
         }
 
-        
         [Fact]
         public void DecodeInPlace()
         {
@@ -411,7 +424,7 @@ namespace System.Buffers.Text.Tests
 
             for (int value = 0; value < 256; value++)
             {
-                Span<byte> sourceBytes = testBytes.AsSpan().Slice(0, value + 1);
+                Span<byte> sourceBytes = testBytes.AsSpan(0, value + 1);
                 Span<byte> buffer = new byte[Base64.GetMaxEncodedToUtf8Length(sourceBytes.Length)];
 
                 Assert.Equal(OperationStatus.Done, Base64.EncodeToUtf8(sourceBytes, buffer, out int consumed, out int written));
@@ -430,7 +443,7 @@ namespace System.Buffers.Text.Tests
         public void DecodeInPlaceInvalidBytes()
         {
             byte[] invalidBytes = Base64TestHelper.InvalidBytes;
-            
+
             for (int j = 0; j < 8; j++)
             {
                 for (int i = 0; i < invalidBytes.Length; i++)
@@ -438,14 +451,15 @@ namespace System.Buffers.Text.Tests
                     Span<byte> buffer = new byte[8] { 50, 50, 50, 50, 80, 80, 80, 80 }; // valid input - "2222PPPP"
 
                     // Don't test padding (byte 61 i.e. '='), which is tested in DecodeInPlaceInvalidBytesPadding
-                    if (invalidBytes[i] == Base64TestHelper.s_encodingPad) continue;
+                    if (invalidBytes[i] == Base64TestHelper.s_encodingPad)
+                        continue;
 
                     // replace one byte with an invalid input
                     buffer[j] = invalidBytes[i];
                     string sourceString = Encoding.ASCII.GetString(buffer.Slice(0, 4).ToArray());
 
                     Assert.Equal(OperationStatus.InvalidData, Base64.DecodeFromUtf8InPlace(buffer, out int bytesWritten));
-                    
+
                     if (j < 4)
                     {
                         Assert.Equal(0, bytesWritten);
@@ -524,7 +538,7 @@ namespace System.Buffers.Text.Tests
                 Span<byte> expectedBytes = Convert.FromBase64String(sourceString);
                 Assert.True(expectedBytes.SequenceEqual(buffer.Slice(0, bytesWritten)));
             }
-            
+
             {
                 Span<byte> buffer = new byte[] { 50, 50, 50, 50, 80, 80, 80, 80 };
                 buffer[7] = Base64TestHelper.s_encodingPad; // valid input - "2222PPP="

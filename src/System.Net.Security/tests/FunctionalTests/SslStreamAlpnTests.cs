@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Xunit;
+using Xunit.Abstractions;
 
 namespace System.Net.Security.Tests
 {
@@ -22,6 +23,17 @@ namespace System.Net.Security.Tests
 
     public class SslStreamAlpnTests
     {
+        private static bool BackendSupportsAlpn => PlatformDetection.SupportsAlpn;
+        private static bool ClientSupportsAlpn => PlatformDetection.SupportsClientAlpn;
+        readonly ITestOutputHelper _output;
+        public static readonly object[][] Http2Servers = Configuration.Http.Http2Servers;
+
+        public SslStreamAlpnTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
+
         private async Task DoHandshakeWithOptions(SslStream clientSslStream, SslStream serverSslStream, SslClientAuthenticationOptions clientOptions, SslServerAuthenticationOptions serverOptions)
         {
             using (X509Certificate2 certificate = Configuration.Certificates.GetServerCertificate())
@@ -147,8 +159,7 @@ namespace System.Net.Security.Tests
                         };
 
                         // Test alpn failure only on platforms that supports ALPN.
-                        if ((RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && !(PlatformDetection.IsUbuntu1404 || PlatformDetection.IsDebian8 || PlatformDetection.IsCentos6)) ||
-                            (PlatformDetection.IsWindows && !PlatformDetection.IsWindows7))
+                        if (BackendSupportsAlpn)
                         {
                             Task t1 = Assert.ThrowsAsync<IOException>(() => clientStream.AuthenticateAsClientAsync(clientOptions, CancellationToken.None));
                             try
@@ -179,6 +190,36 @@ namespace System.Net.Security.Tests
             }
         }
 
+        [OuterLoop("Uses external server")]
+        [ConditionalTheory(nameof(ClientSupportsAlpn))]
+        [MemberData(nameof(Http2Servers))]
+        public async Task SslStream_Http2_Alpn_Success(Uri server)
+        {
+            using (TcpClient client = new TcpClient())
+            {
+                try
+                {
+                    await client.ConnectAsync(server.Host, server.Port);
+                    using (SslStream clientStream = new SslStream(client.GetStream(), leaveInnerStreamOpen: false))
+                    {
+                        SslClientAuthenticationOptions clientOptions = new SslClientAuthenticationOptions
+                        {
+                            ApplicationProtocols = new List<SslApplicationProtocol> { SslApplicationProtocol.Http2 , SslApplicationProtocol.Http11 },
+                            TargetHost = server.Host
+                        };
+
+                        await clientStream.AuthenticateAsClientAsync(clientOptions, CancellationToken.None);
+                        Assert.Equal("h2", clientStream.NegotiatedApplicationProtocol.ToString());
+                    }
+                }
+                catch (Exception e)
+                {
+                    // Failures to connect do not cause test failure.
+                    _output.WriteLine("Unable to connect: {0}", e);
+                }
+            }
+        }
+
         internal static IEnumerable<object[]> Alpn_TestData()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -193,14 +234,9 @@ namespace System.Net.Security.Tests
             }
             else
             {
-                // Works on linux distros with openssl 1.0.2, CI machines Ubuntu14.04 and Debian 87 don't have openssl 1.0.2
-                // Works on Windows OSes > 7.0
-                bool featureWorks = (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && !(PlatformDetection.IsUbuntu1404 || PlatformDetection.IsDebian8 || PlatformDetection.IsCentos6)) ||
-                                    (PlatformDetection.IsWindows && !PlatformDetection.IsWindows7);
-
-                yield return new object[] { new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 }, new List<SslApplicationProtocol> { SslApplicationProtocol.Http2 }, featureWorks ? SslApplicationProtocol.Http2 : default };
-                yield return new object[] { new List<SslApplicationProtocol> { SslApplicationProtocol.Http11 }, new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 }, featureWorks ? SslApplicationProtocol.Http11 : default };
-                yield return new object[] { new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 }, new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 }, featureWorks ? SslApplicationProtocol.Http11 : default };
+                yield return new object[] { new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 }, new List<SslApplicationProtocol> { SslApplicationProtocol.Http2 }, BackendSupportsAlpn ? SslApplicationProtocol.Http2 : default };
+                yield return new object[] { new List<SslApplicationProtocol> { SslApplicationProtocol.Http11 }, new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 }, BackendSupportsAlpn ? SslApplicationProtocol.Http11 : default };
+                yield return new object[] { new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 }, new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 }, BackendSupportsAlpn ? SslApplicationProtocol.Http11 : default };
                 yield return new object[] { null, new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 }, default(SslApplicationProtocol) };
                 yield return new object[] { new List<SslApplicationProtocol> { SslApplicationProtocol.Http11, SslApplicationProtocol.Http2 }, null, default(SslApplicationProtocol) };
                 yield return new object[] { null, null, default(SslApplicationProtocol) };

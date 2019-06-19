@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,18 +10,13 @@ namespace System.IO
     // This class implements a text reader that reads from a string.
     public class StringReader : TextReader
     {
-        private string _s;
+        private string? _s;
         private int _pos;
         private int _length;
 
         public StringReader(string s)
         {
-            if (s == null)
-            {
-                throw new ArgumentNullException(nameof(s));
-            }
-
-            _s = s;
+            _s = s ?? throw new ArgumentNullException(nameof(s));
             _length = s.Length;
         }
 
@@ -44,7 +38,6 @@ namespace System.IO
         // changed by this operation. The returned value is -1 if no further
         // characters are available.
         //
-        [Pure]
         public override int Peek()
         {
             if (_s == null)
@@ -122,7 +115,7 @@ namespace System.IO
         {
             if (GetType() != typeof(StringReader))
             {
-                // This overload was added affter the Read(char[], ...) overload, and so in case
+                // This overload was added after the Read(char[], ...) overload, and so in case
                 // a derived type may have overridden it, we need to delegate to it, which the base does.
                 return base.Read(buffer);
             }
@@ -140,7 +133,7 @@ namespace System.IO
                     n = buffer.Length;
                 }
 
-                _s.AsReadOnlySpan().Slice(_pos, n).CopyTo(buffer);
+                _s.AsSpan(_pos, n).CopyTo(buffer);
                 _pos += n;
             }
 
@@ -176,7 +169,7 @@ namespace System.IO
         // contain the terminating carriage return and/or line feed. The returned
         // value is null if the end of the underlying string has been reached.
         //
-        public override string ReadLine()
+        public override string? ReadLine()
         {
             if (_s == null)
             {
@@ -213,7 +206,7 @@ namespace System.IO
         }
 
         #region Task based Async APIs
-        public override Task<string> ReadLineAsync()
+        public override Task<string?> ReadLineAsync()
         {
             return Task.FromResult(ReadLine());
         }

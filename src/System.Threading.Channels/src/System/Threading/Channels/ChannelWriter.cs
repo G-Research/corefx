@@ -25,44 +25,44 @@ namespace System.Threading.Channels
         /// <returns>true if the item was written; otherwise, false if it wasn't written.</returns>
         public abstract bool TryWrite(T item);
 
-        /// <summary>Returns a <see cref="Task{Boolean}"/> that will complete when space is available to write an item.</summary>
+        /// <summary>Returns a <see cref="ValueTask{Boolean}"/> that will complete when space is available to write an item.</summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> used to cancel the wait operation.</param>
         /// <returns>
-        /// A <see cref="Task{Boolean}"/> that will complete with a <c>true</c> result when space is available to write an item
+        /// A <see cref="ValueTask{Boolean}"/> that will complete with a <c>true</c> result when space is available to write an item
         /// or with a <c>false</c> result when no further writing will be permitted.
         /// </returns>
-        public abstract Task<bool> WaitToWriteAsync(CancellationToken cancellationToken = default);
+        public abstract ValueTask<bool> WaitToWriteAsync(CancellationToken cancellationToken = default);
 
         /// <summary>Asynchronously writes an item to the channel.</summary>
         /// <param name="item">The value to write to the channel.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> used to cancel the write operation.</param>
-        /// <returns>A <see cref="Task"/> that represents the asynchronous write operation.</returns>
-        public virtual Task WriteAsync(T item, CancellationToken cancellationToken = default)
+        /// <returns>A <see cref="ValueTask"/> that represents the asynchronous write operation.</returns>
+        public virtual ValueTask WriteAsync(T item, CancellationToken cancellationToken = default)
         {
             try
             {
                 return
-                    cancellationToken.IsCancellationRequested ? Task.FromCanceled<T>(cancellationToken) :
-                    TryWrite(item) ? Task.CompletedTask :
-                    WriteAsyncCore(item, cancellationToken);
+                    cancellationToken.IsCancellationRequested ? new ValueTask(Task.FromCanceled<T>(cancellationToken)) :
+                    TryWrite(item) ? default :
+                    new ValueTask(WriteAsyncCore(item, cancellationToken));
             }
             catch (Exception e)
             {
-                return Task.FromException(e);
+                return new ValueTask(Task.FromException(e));
             }
+        }
 
-            async Task WriteAsyncCore(T innerItem, CancellationToken ct)
+        private async Task WriteAsyncCore(T innerItem, CancellationToken ct)
+        {
+            while (await WaitToWriteAsync(ct).ConfigureAwait(false))
             {
-                while (await WaitToWriteAsync(ct).ConfigureAwait(false))
+                if (TryWrite(innerItem))
                 {
-                    if (TryWrite(innerItem))
-                    {
-                        return;
-                    }
+                    return;
                 }
-
-                throw ChannelUtilities.CreateInvalidCompletionException();
             }
+
+            throw ChannelUtilities.CreateInvalidCompletionException();
         }
 
         /// <summary>Mark the channel as being complete, meaning no more items will be written to it.</summary>

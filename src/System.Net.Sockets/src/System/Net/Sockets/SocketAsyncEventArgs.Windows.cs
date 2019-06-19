@@ -5,6 +5,7 @@
 using System.Buffers;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -40,13 +41,31 @@ namespace System.Net.Sockets
 
         // Overlapped object related variables.
         private PreAllocatedOverlapped _preAllocatedOverlapped;
+        private readonly StrongBox<SocketAsyncEventArgs> _strongThisRef = new StrongBox<SocketAsyncEventArgs>(); // state for _preAllocatedOverlapped; .Value set to this while operations in flight
+
+        // Cancellation support
+        private CancellationTokenRegistration _registrationToCancelPendingIO;
+        private unsafe NativeOverlapped* _pendingOverlappedForCancellation;
 
         private PinState _pinState;
         private enum PinState : byte { None = 0, MultipleBuffer, SendPackets }
 
         private void InitializeInternals()
         {
-            _preAllocatedOverlapped = new PreAllocatedOverlapped(s_completionPortCallback, this, null);
+            // PreAllocatedOverlapped captures ExecutionContext, but SocketAsyncEventArgs ensures
+            // that context is properly flowed if necessary, and thus we don't need the overlapped
+            // infrastructure capturing and flowing as well.
+            bool suppressFlow = !ExecutionContext.IsFlowSuppressed();
+            try
+            {
+                if (suppressFlow) ExecutionContext.SuppressFlow();
+                _preAllocatedOverlapped = new PreAllocatedOverlapped(s_completionPortCallback, _strongThisRef, null);
+            }
+            finally
+            {
+                if (suppressFlow) ExecutionContext.RestoreFlow();
+            }
+
             if (NetEventSource.IsEnabled) NetEventSource.Info(this, $"new PreAllocatedOverlapped {_preAllocatedOverlapped}");
         }
 
@@ -58,9 +77,9 @@ namespace System.Net.Sockets
 
         private unsafe NativeOverlapped* AllocateNativeOverlapped()
         {
+            Debug.Assert(_operating == InProgress, $"Expected {nameof(_operating)} == {nameof(InProgress)}, got {_operating}");
             Debug.Assert(_currentSocket != null, "_currentSocket is null");
             Debug.Assert(_currentSocket.SafeHandle != null, "_currentSocket.SafeHandle is null");
-            Debug.Assert(!_currentSocket.SafeHandle.IsInvalid, "_currentSocket.SafeHandle is invalid");
             Debug.Assert(_preAllocatedOverlapped != null, "_preAllocatedOverlapped is null");
 
             ThreadPoolBoundHandle boundHandle = _currentSocket.GetOrAllocateThreadPoolBoundHandle();
@@ -70,6 +89,7 @@ namespace System.Net.Sockets
         private unsafe void FreeNativeOverlapped(NativeOverlapped* overlapped)
         {
             Debug.Assert(overlapped != null, "overlapped is null");
+            Debug.Assert(_operating == InProgress, $"Expected _operating == InProgress, got {_operating}");
             Debug.Assert(_currentSocket != null, "_currentSocket is null");
             Debug.Assert(_currentSocket.SafeHandle != null, "_currentSocket.SafeHandle is null");
             Debug.Assert(_currentSocket.SafeHandle.IOCPBoundHandle != null, "_currentSocket.SafeHandle.IOCPBoundHandle is null");
@@ -78,16 +98,56 @@ namespace System.Net.Sockets
             _currentSocket.SafeHandle.IOCPBoundHandle.FreeNativeOverlapped(overlapped);
         }
 
-        private unsafe void FreeNativeOverlappedIfNotPending(NativeOverlapped* overlapped, SocketError error)
+        private unsafe void RegisterToCancelPendingIO(NativeOverlapped* overlapped, CancellationToken cancellationToken)
         {
-            if (error != SocketError.IOPending)
+            Debug.Assert(_singleBufferHandleState == SingleBufferHandleState.InProcess);
+            Debug.Assert(_pendingOverlappedForCancellation == null);
+            _pendingOverlappedForCancellation = overlapped;
+            _registrationToCancelPendingIO = cancellationToken.UnsafeRegister(s =>
             {
-                FreeNativeOverlapped(overlapped);
-            }
+                // Try to cancel the I/O.  We ignore the return value (other than for logging), as cancellation
+                // is opportunistic and we don't want to fail the operation because we couldn't cancel it.
+                var thisRef = (SocketAsyncEventArgs)s;
+                SafeSocketHandle handle = thisRef._currentSocket.SafeHandle;
+                if (!handle.IsClosed)
+                {
+                    try
+                    {
+                        bool canceled = Interop.Kernel32.CancelIoEx(handle, thisRef._pendingOverlappedForCancellation);
+                        if (NetEventSource.IsEnabled)
+                        {
+                            NetEventSource.Info(thisRef, canceled ?
+                                "Socket operation canceled." :
+                                $"CancelIoEx failed with error '{Marshal.GetLastWin32Error()}'.");
+                        }
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // Ignore errors resulting from the SafeHandle being closed concurrently.
+                    }
+                }
+            }, this);
         }
 
-        private SocketError ProcessIOCPResult(bool success, int bytesTransferred)
+        partial void StartOperationCommonCore()
         {
+            // Store the reference to this instance so that it's kept alive by the preallocated
+            // overlapped during the asynchronous operation and so that it's available in the
+            // I/O completion callback.  Once the operation completes, we null this out so
+            // that the SocketAsyncEventArgs instance isn't kept alive unnecessarily.
+            _strongThisRef.Value = this;
+        }
+
+        /// <summary>Handles the result of an IOCP operation.</summary>
+        /// <param name="success">true if the operation completed synchronously and successfully; otherwise, false.</param>
+        /// <param name="bytesTransferred">The number of bytes transferred, if the operation completed synchronously and successfully.</param>
+        /// <param name="overlapped">The overlapped to be freed if the operation completed synchronously.</param>
+        /// <returns>The result status of the operation.</returns>
+        private unsafe SocketError ProcessIOCPResult(bool success, int bytesTransferred, NativeOverlapped* overlapped)
+        {
+            // Note: We need to dispose of the overlapped iff the operation completed synchronously,
+            // and if we do, we must do so before we mark the operation as completed.
+
             if (success)
             {
                 // Synchronous success.
@@ -95,6 +155,7 @@ namespace System.Net.Sockets
                 {
                     // The socket handle is configured to skip completion on success, 
                     // so we can set the results right now.
+                    FreeNativeOverlapped(overlapped);
                     FinishOperationSyncSuccess(bytesTransferred, SocketFlags.None);
                     return SocketError.Success;
                 }
@@ -109,6 +170,7 @@ namespace System.Net.Sockets
                 if (socketError != SocketError.IOPending)
                 {
                     // Completed synchronously with a failure.
+                    FreeNativeOverlapped(overlapped);
                     FinishOperationSyncFailure(socketError, bytesTransferred, SocketFlags.None);
                     return socketError;
                 }
@@ -121,8 +183,17 @@ namespace System.Net.Sockets
             return SocketError.IOPending;
         }
 
-        private SocketError ProcessIOCPResultWithSingleBufferHandle(SocketError socketError, int bytesTransferred)
+        /// <summary>Handles the result of an IOCP operation.</summary>
+        /// <param name="socketError">The result status of the operation, as returned from the API call.</param>
+        /// <param name="bytesTransferred">The number of bytes transferred, if the operation completed synchronously and successfully.</param>
+        /// <param name="overlapped">The overlapped to be freed if the operation completed synchronously.</param>
+        /// <param name="cancellationToken">The cancellation token to use to cancel the operation.</param>
+        /// <returns>The result status of the operation.</returns>
+        private unsafe SocketError ProcessIOCPResultWithSingleBufferHandle(SocketError socketError, int bytesTransferred, NativeOverlapped* overlapped, CancellationToken cancellationToken = default)
         {
+            // Note: We need to dispose of the overlapped iff the operation completed synchronously,
+            // and if we do, we must do so before we mark the operation as completed.
+
             if (socketError == SocketError.Success)
             {
                 // Synchronous success.
@@ -131,6 +202,7 @@ namespace System.Net.Sockets
                     // The socket handle is configured to skip completion on success, 
                     // so we can set the results right now.
                     _singleBufferHandleState = SingleBufferHandleState.None;
+                    FreeNativeOverlapped(overlapped);
                     FinishOperationSyncSuccess(bytesTransferred, SocketFlags.None);
                     return SocketError.Success;
                 }
@@ -146,6 +218,7 @@ namespace System.Net.Sockets
                 {
                     // Completed synchronously with a failure.
                     _singleBufferHandleState = SingleBufferHandleState.None;
+                    FreeNativeOverlapped(overlapped);
                     FinishOperationSyncFailure(socketError, bytesTransferred, SocketFlags.None);
                     return socketError;
                 }
@@ -157,23 +230,24 @@ namespace System.Net.Sockets
             // Return pending and we will continue in the completion port callback.
             if (_singleBufferHandleState == SingleBufferHandleState.InProcess)
             {
-                _singleBufferHandle = _buffer.Retain(pin: true);
+                RegisterToCancelPendingIO(overlapped, cancellationToken);// must happen before we change state to Set to avoid race conditions
+                _singleBufferHandle = _buffer.Pin();
                 _singleBufferHandleState = SingleBufferHandleState.Set;
             }
             return SocketError.IOPending;
         }
 
-        internal unsafe SocketError DoOperationAccept(Socket socket, SafeCloseSocket handle, SafeCloseSocket acceptHandle)
+        internal unsafe SocketError DoOperationAccept(Socket socket, SafeSocketHandle handle, SafeSocketHandle acceptHandle)
         {
-            SocketError socketError = SocketError.Success;
+            bool userBuffer = _count != 0;
+            Debug.Assert(!userBuffer || (!_buffer.Equals(default) && _count >= _acceptAddressBufferCount));
+            Memory<byte> buffer = userBuffer ? _buffer : _acceptBuffer;
+            Debug.Assert(_singleBufferHandleState == SingleBufferHandleState.None);
+
             NativeOverlapped* overlapped = AllocateNativeOverlapped();
             try
             {
-                bool userBuffer = _count != 0;
-                Debug.Assert(!userBuffer || (!_buffer.Equals(default) && _count >= _acceptAddressBufferCount));
-                Memory<byte> buffer = userBuffer ? _buffer : _acceptBuffer;
-                Debug.Assert(_singleBufferHandleState == SingleBufferHandleState.None);
-                _singleBufferHandle = buffer.Retain(pin: true);
+                _singleBufferHandle = buffer.Pin();
                 _singleBufferHandleState = SingleBufferHandleState.Set;
 
                 bool success = socket.AcceptEx(
@@ -186,34 +260,29 @@ namespace System.Net.Sockets
                     out int bytesTransferred,
                     overlapped);
 
-                socketError = ProcessIOCPResult(success, bytesTransferred);
-                return socketError;
+                return ProcessIOCPResult(success, bytesTransferred, overlapped);
             }
             catch
             {
-                _singleBufferHandle.Dispose();
                 _singleBufferHandleState = SingleBufferHandleState.None;
+                FreeNativeOverlapped(overlapped);
+                _singleBufferHandle.Dispose();
                 throw;
-            }
-            finally
-            {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
             }
         }
 
-        internal unsafe SocketError DoOperationConnect(Socket socket, SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationConnect(Socket socket, SafeSocketHandle handle)
         {
             // ConnectEx uses a sockaddr buffer containing the remote address to which to connect.
             // It can also optionally take a single buffer of data to send after the connection is complete.
             // The sockaddr is pinned with a GCHandle to avoid having to use the object array form of UnsafePack.
             PinSocketAddressBuffer();
 
-            SocketError socketError = SocketError.Success;
             NativeOverlapped* overlapped = AllocateNativeOverlapped();
             try
             {
                 Debug.Assert(_singleBufferHandleState == SingleBufferHandleState.None);
-                _singleBufferHandle = _buffer.Retain(pin: true);
+                _singleBufferHandle = _buffer.Pin();
                 _singleBufferHandleState = SingleBufferHandleState.Set;
 
                 bool success = socket.ConnectEx(
@@ -225,24 +294,19 @@ namespace System.Net.Sockets
                     out int bytesTransferred,
                     overlapped);
 
-                socketError = ProcessIOCPResult(success, bytesTransferred);
-                return socketError;
+                return ProcessIOCPResult(success, bytesTransferred, overlapped);
             }
             catch
             {
-                _singleBufferHandle.Dispose();
                 _singleBufferHandleState = SingleBufferHandleState.None;
+                FreeNativeOverlapped(overlapped);
+                _singleBufferHandle.Dispose();
                 throw;
-            }
-            finally
-            {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
             }
         }
 
-        internal unsafe SocketError DoOperationDisconnect(Socket socket, SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationDisconnect(Socket socket, SafeSocketHandle handle)
         {
-            SocketError socketError = SocketError.Success;
             NativeOverlapped* overlapped = AllocateNativeOverlapped();
             try
             {
@@ -252,84 +316,76 @@ namespace System.Net.Sockets
                     (int)(DisconnectReuseSocket ? TransmitFileOptions.ReuseSocket : 0),
                     0);
 
-                socketError = ProcessIOCPResult(success, 0);
-                return socketError;
+                return ProcessIOCPResult(success, 0, overlapped);
             }
-            finally
+            catch
             {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
+                FreeNativeOverlapped(overlapped);
+                throw;
             }
         }
 
-        internal SocketError DoOperationReceive(SafeCloseSocket handle) => _bufferList == null ? 
-            DoOperationReceiveSingleBuffer(handle) :
+        internal SocketError DoOperationReceive(SafeSocketHandle handle, CancellationToken cancellationToken) => _bufferList == null ? 
+            DoOperationReceiveSingleBuffer(handle, cancellationToken) :
             DoOperationReceiveMultiBuffer(handle);
 
-        internal unsafe SocketError DoOperationReceiveSingleBuffer(SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationReceiveSingleBuffer(SafeSocketHandle handle, CancellationToken cancellationToken)
         {
-            SocketError socketError = SocketError.Success;
-            NativeOverlapped* overlapped = AllocateNativeOverlapped();
-            try
+            fixed (byte* bufferPtr = &MemoryMarshal.GetReference(_buffer.Span))
             {
-                fixed (byte* bufferPtr = &_buffer.Span.DangerousGetPinnableReference())
+                NativeOverlapped* overlapped = AllocateNativeOverlapped();
+                try
                 {
                     Debug.Assert(_singleBufferHandleState == SingleBufferHandleState.None, $"Expected None, got {_singleBufferHandleState}");
                     _singleBufferHandleState = SingleBufferHandleState.InProcess;
                     var wsaBuffer = new WSABuffer { Length = _count, Pointer = (IntPtr)(bufferPtr + _offset) };
-                    SocketFlags flags = _socketFlags;
 
-                    socketError = Interop.Winsock.WSARecv(
-                        handle.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                    SocketFlags flags = _socketFlags;
+                    SocketError socketError = Interop.Winsock.WSARecv(
+                        handle,
                         ref wsaBuffer,
                         1,
                         out int bytesTransferred,
                         ref flags,
                         overlapped,
                         IntPtr.Zero);
-                    GC.KeepAlive(handle); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
-                    socketError = ProcessIOCPResultWithSingleBufferHandle(socketError, bytesTransferred);
+                    return ProcessIOCPResultWithSingleBufferHandle(socketError, bytesTransferred, overlapped, cancellationToken);
                 }
-                return socketError;
-            }
-            catch
-            {
-                _singleBufferHandleState = SingleBufferHandleState.None;
-                throw;
-            }
-            finally
-            {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
+                catch
+                {
+                    _singleBufferHandleState = SingleBufferHandleState.None;
+                    FreeNativeOverlapped(overlapped);
+                    throw;
+                }
             }
         }
 
-        internal unsafe SocketError DoOperationReceiveMultiBuffer(SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationReceiveMultiBuffer(SafeSocketHandle handle)
         {
-            SocketError socketError = SocketError.Success;
             NativeOverlapped* overlapped = AllocateNativeOverlapped();
             try
             {
                 SocketFlags flags = _socketFlags;
-                socketError = Interop.Winsock.WSARecv(
-                    handle.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                SocketError socketError = Interop.Winsock.WSARecv(
+                    handle,
                     _wsaBufferArray,
                     _bufferListInternal.Count,
                     out int bytesTransferred,
                     ref flags,
                     overlapped,
                     IntPtr.Zero);
-                GC.KeepAlive(handle); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
-                socketError = ProcessIOCPResult(socketError == SocketError.Success, bytesTransferred);
-                return socketError;
+                return ProcessIOCPResult(socketError == SocketError.Success, bytesTransferred, overlapped);
             }
-            finally
+            catch
             {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
+                FreeNativeOverlapped(overlapped);
+                throw;
             }
         }
 
-        internal unsafe SocketError DoOperationReceiveFrom(SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationReceiveFrom(SafeSocketHandle handle)
         {
             // WSARecvFrom uses a WSABuffer array describing buffers in which to 
             // receive data and from which to send data respectively. Single and multiple buffers
@@ -343,22 +399,20 @@ namespace System.Net.Sockets
                 DoOperationReceiveFromMultiBuffer(handle);
         }
 
-        internal unsafe SocketError DoOperationReceiveFromSingleBuffer(SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationReceiveFromSingleBuffer(SafeSocketHandle handle)
         {
-
-            SocketError socketError = SocketError.Success;
-            NativeOverlapped* overlapped = AllocateNativeOverlapped();
-            try
+            fixed (byte* bufferPtr = &MemoryMarshal.GetReference(_buffer.Span))
             {
-                fixed (byte* bufferPtr = &_buffer.Span.DangerousGetPinnableReference())
+                NativeOverlapped* overlapped = AllocateNativeOverlapped();
+                try
                 {
                     Debug.Assert(_singleBufferHandleState == SingleBufferHandleState.None);
                     _singleBufferHandleState = SingleBufferHandleState.InProcess;
                     var wsaBuffer = new WSABuffer { Length = _count, Pointer = (IntPtr)(bufferPtr + _offset) };
-                    SocketFlags flags = _socketFlags;
 
-                    socketError = Interop.Winsock.WSARecvFrom(
-                        handle.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                    SocketFlags flags = _socketFlags;
+                    SocketError socketError = Interop.Winsock.WSARecvFrom(
+                        handle,
                         ref wsaBuffer,
                         1,
                         out int bytesTransferred,
@@ -367,33 +421,26 @@ namespace System.Net.Sockets
                         PtrSocketAddressBufferSize,
                         overlapped,
                         IntPtr.Zero);
-                    GC.KeepAlive(handle); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
-                    socketError = ProcessIOCPResultWithSingleBufferHandle(socketError, bytesTransferred);
-                    return socketError;
+                    return ProcessIOCPResultWithSingleBufferHandle(socketError, bytesTransferred, overlapped);
                 }
-            }
-            catch
-            {
-                _singleBufferHandleState = SingleBufferHandleState.None;
-                throw;
-            }
-            finally
-            {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
+                catch
+                {
+                    _singleBufferHandleState = SingleBufferHandleState.None;
+                    FreeNativeOverlapped(overlapped);
+                    throw;
+                }
             }
         }
 
-        internal unsafe SocketError DoOperationReceiveFromMultiBuffer(SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationReceiveFromMultiBuffer(SafeSocketHandle handle)
         {
-
-            SocketError socketError = SocketError.Success;
             NativeOverlapped* overlapped = AllocateNativeOverlapped();
             try
             {
                 SocketFlags flags = _socketFlags;
-                socketError = Interop.Winsock.WSARecvFrom(
-                    handle.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                SocketError socketError = Interop.Winsock.WSARecvFrom(
+                    handle,
                     _wsaBufferArray,
                     _bufferListInternal.Count,
                     out int bytesTransferred,
@@ -402,18 +449,17 @@ namespace System.Net.Sockets
                     PtrSocketAddressBufferSize,
                     overlapped,
                     IntPtr.Zero);
-                GC.KeepAlive(handle); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
-                socketError = ProcessIOCPResult(socketError == SocketError.Success, bytesTransferred);
-                return socketError;
+                return ProcessIOCPResult(socketError == SocketError.Success, bytesTransferred, overlapped);
             }
-            finally
+            catch
             {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
+                FreeNativeOverlapped(overlapped);
+                throw;
             }
         }
 
-        internal unsafe SocketError DoOperationReceiveMessageFrom(Socket socket, SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationReceiveMessageFrom(Socket socket, SafeSocketHandle handle)
         {
             // WSARecvMsg uses a WSAMsg descriptor.
             // The WSAMsg buffer is pinned with a GCHandle to avoid complicating the use of Overlapped.
@@ -470,7 +516,7 @@ namespace System.Net.Sockets
                 }
 
                 Debug.Assert(_singleBufferHandleState == SingleBufferHandleState.None);
-                _singleBufferHandle = _buffer.Retain(pin: true);
+                _singleBufferHandle = _buffer.Pin();
                 _singleBufferHandleState = SingleBufferHandleState.Set;
 
                 _wsaRecvMsgWSABufferArray[0].Pointer = (IntPtr)_singleBufferHandle.Pointer;
@@ -522,99 +568,86 @@ namespace System.Net.Sockets
                 pMessage->flags = _socketFlags;
             }
 
-            SocketError socketError = SocketError.Success;
             NativeOverlapped* overlapped = AllocateNativeOverlapped();
             try
             {
-                socketError = socket.WSARecvMsg(
+                SocketError socketError = socket.WSARecvMsg(
                     handle,
                     Marshal.UnsafeAddrOfPinnedArrayElement(_wsaMessageBuffer, 0),
                     out int bytesTransferred,
                     overlapped,
                     IntPtr.Zero);
 
-                socketError = ProcessIOCPResultWithSingleBufferHandle(socketError, bytesTransferred);
-                return socketError;
+                return ProcessIOCPResultWithSingleBufferHandle(socketError, bytesTransferred, overlapped);
             }
             catch
             {
-                _singleBufferHandle.Dispose();
                 _singleBufferHandleState = SingleBufferHandleState.None;
+                FreeNativeOverlapped(overlapped);
+                _singleBufferHandle.Dispose();
                 throw;
-            }
-            finally
-            {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
             }
         }
 
-        internal unsafe SocketError DoOperationSend(SafeCloseSocket handle) => _bufferList == null ?
-            DoOperationSendSingleBuffer(handle) :
+        internal unsafe SocketError DoOperationSend(SafeSocketHandle handle, CancellationToken cancellationToken) => _bufferList == null ?
+            DoOperationSendSingleBuffer(handle, cancellationToken) :
             DoOperationSendMultiBuffer(handle);
 
-        internal unsafe SocketError DoOperationSendSingleBuffer(SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationSendSingleBuffer(SafeSocketHandle handle, CancellationToken cancellationToken)
         {
-            SocketError socketError = SocketError.Success;
-            NativeOverlapped* overlapped = AllocateNativeOverlapped();
-            try
+            fixed (byte* bufferPtr = &MemoryMarshal.GetReference(_buffer.Span))
             {
-                fixed (byte* bufferPtr = &_buffer.Span.DangerousGetPinnableReference())
+                NativeOverlapped* overlapped = AllocateNativeOverlapped();
+                try
                 {
                     Debug.Assert(_singleBufferHandleState == SingleBufferHandleState.None);
                     _singleBufferHandleState = SingleBufferHandleState.InProcess;
                     var wsaBuffer = new WSABuffer { Length = _count, Pointer = (IntPtr)(bufferPtr + _offset) };
 
-                    socketError = Interop.Winsock.WSASend(
-                        handle.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                    SocketError socketError = Interop.Winsock.WSASend(
+                        handle,
                         ref wsaBuffer,
                         1,
                         out int bytesTransferred,
                         _socketFlags,
                         overlapped,
                         IntPtr.Zero);
-                    GC.KeepAlive(handle); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
-                    socketError = ProcessIOCPResultWithSingleBufferHandle(socketError, bytesTransferred);
-                    return socketError;
+                    return ProcessIOCPResultWithSingleBufferHandle(socketError, bytesTransferred, overlapped, cancellationToken);
                 }
-            }
-            catch
-            {
-                _singleBufferHandleState = SingleBufferHandleState.None;
-                throw;
-            }
-            finally
-            {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
+                catch
+                {
+                    _singleBufferHandleState = SingleBufferHandleState.None;
+                    FreeNativeOverlapped(overlapped);
+                    throw;
+                }
             }
         }
 
-        internal unsafe SocketError DoOperationSendMultiBuffer(SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationSendMultiBuffer(SafeSocketHandle handle)
         {
-            SocketError socketError = SocketError.Success;
             NativeOverlapped* overlapped = AllocateNativeOverlapped();
             try
             {
-                socketError = Interop.Winsock.WSASend(
-                    handle.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                SocketError socketError = Interop.Winsock.WSASend(
+                    handle,
                     _wsaBufferArray,
                     _bufferListInternal.Count,
                     out int bytesTransferred,
                     _socketFlags,
                     overlapped,
                     IntPtr.Zero);
-                GC.KeepAlive(handle); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
-                socketError = ProcessIOCPResult(socketError == SocketError.Success, bytesTransferred);
-                return socketError;
+                return ProcessIOCPResult(socketError == SocketError.Success, bytesTransferred, overlapped);
             }
-            finally
+            catch
             {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
+                FreeNativeOverlapped(overlapped);
+                throw;
             }
         }
 
-        internal unsafe SocketError DoOperationSendPackets(Socket socket, SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationSendPackets(Socket socket, SafeSocketHandle handle)
         {
             // Cache copy to avoid problems with concurrent manipulation during the async operation.
             Debug.Assert(_sendPacketsElements != null);
@@ -627,77 +660,72 @@ namespace System.Net.Sockets
             // native TRANSMIT_PACKET_ELEMENT array that will be passed to TransmitPackets.
 
             // Scan the elements to count files and buffers.
-            int sendPacketsElementsFileCount = 0, sendPacketsElementsBufferCount = 0;
+            int sendPacketsElementsFileCount = 0, sendPacketsElementsFileStreamCount = 0, sendPacketsElementsBufferCount = 0;
             foreach (SendPacketsElement spe in sendPacketsElementsCopy)
             {
                 if (spe != null)
                 {
-                    if (spe._filePath != null)
+                    if (spe.FilePath != null)
                     {
                         sendPacketsElementsFileCount++;
                     }
-                    else if (spe._buffer != null && spe._count > 0)
+                    else if (spe.FileStream != null)
+                    {
+                        sendPacketsElementsFileStreamCount++;
+                    }
+                    else if (spe.Buffer != null && spe.Count > 0)
                     {
                         sendPacketsElementsBufferCount++;
                     }
                 }
             }
 
-            // Attempt to open the files if any were given.
-            if (sendPacketsElementsFileCount > 0)
-            {
-                // Create arrays for streams.
-                _sendPacketsFileStreams = new FileStream[sendPacketsElementsFileCount];
-
-                // Loop through the elements attempting to open each files and get its handle.
-                int index = 0;
-                foreach (SendPacketsElement spe in sendPacketsElementsCopy)
-                {
-                    if (spe != null && spe._filePath != null)
-                    {
-                        Exception fileStreamException = null;
-                        try
-                        {
-                            // Create a FileStream to open the file.
-                            _sendPacketsFileStreams[index] =
-                                new FileStream(spe._filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                        }
-                        catch (Exception ex)
-                        {
-                            // Save the exception to throw after closing any previous successful file opens.
-                            fileStreamException = ex;
-                        }
-                        if (fileStreamException != null)
-                        {
-                            // Got an exception opening a file - close any open streams, then throw.
-                            for (int i = 0; i < sendPacketsElementsFileCount; i++)
-                            {
-                                _sendPacketsFileStreams[i]?.Dispose();
-                            }
-                            _sendPacketsFileStreams = null;
-                            throw fileStreamException;
-                        }
-
-                        // Get the file handle from the stream.
-                        index++;
-                    }
-                }
-            }
-
-            if (sendPacketsElementsFileCount + sendPacketsElementsBufferCount == 0)
+            if (sendPacketsElementsFileCount + sendPacketsElementsFileStreamCount + sendPacketsElementsBufferCount == 0)
             {
                 FinishOperationSyncSuccess(0, SocketFlags.None);
                 return SocketError.Success;
             }
 
-            Interop.Winsock.TransmitPacketsElement[] sendPacketsDescriptor = SetupPinHandlesSendPackets(sendPacketsElementsCopy, sendPacketsElementsFileCount, sendPacketsElementsBufferCount);
+            // Attempt to open the files if any were given.
+            if (sendPacketsElementsFileCount > 0)
+            {
+                // Loop through the elements attempting to open each files and get its handle.
+                int index = 0;
+                _sendPacketsFileStreams = new FileStream[sendPacketsElementsFileCount];
+                try
+                {
+                    foreach (SendPacketsElement spe in sendPacketsElementsCopy)
+                    {
+                        if (spe?.FilePath != null)
+                        {
+                            // Create a FileStream to open the file.
+                            _sendPacketsFileStreams[index] =
+                                new FileStream(spe.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+                            // Get the file handle from the stream.
+                            index++;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Got an exception opening a file - close any open streams, then throw.
+                    for (int i = index - 1; i >= 0; i--)
+                        _sendPacketsFileStreams[i].Dispose();
+                    _sendPacketsFileStreams = null;
+                    throw;
+                }
+            }
+
+            Interop.Winsock.TransmitPacketsElement[] sendPacketsDescriptor =
+                SetupPinHandlesSendPackets(sendPacketsElementsCopy, sendPacketsElementsFileCount,
+                    sendPacketsElementsFileStreamCount, sendPacketsElementsBufferCount);
             Debug.Assert(sendPacketsDescriptor != null);
             Debug.Assert(sendPacketsDescriptor.Length > 0);
             Debug.Assert(_multipleBufferGCHandles != null);
             Debug.Assert(_multipleBufferGCHandles[0].IsAllocated);
             Debug.Assert(_multipleBufferGCHandles[0].Target == sendPacketsDescriptor);
 
-            SocketError socketError = SocketError.Success;
             NativeOverlapped* overlapped = AllocateNativeOverlapped();
             try
             {
@@ -709,16 +737,16 @@ namespace System.Net.Sockets
                     overlapped,
                     _sendPacketsFlags);
 
-                socketError = ProcessIOCPResult(result, 0);
-                return socketError;
+                return ProcessIOCPResult(result, 0, overlapped);
             }
-            finally
+            catch
             {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
+                FreeNativeOverlapped(overlapped);
+                throw;
             }
         }
 
-        internal unsafe SocketError DoOperationSendTo(SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationSendTo(SafeSocketHandle handle)
         {
             // WSASendTo uses a WSABuffer array describing buffers in which to 
             // receive data and from which to send data respectively. Single and multiple buffers
@@ -733,20 +761,19 @@ namespace System.Net.Sockets
                 DoOperationSendToMultiBuffer(handle);
         }
 
-        internal unsafe SocketError DoOperationSendToSingleBuffer(SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationSendToSingleBuffer(SafeSocketHandle handle)
         {
-            SocketError socketError = SocketError.Success;
-            NativeOverlapped* overlapped = AllocateNativeOverlapped();
-            try
+            fixed (byte* bufferPtr = &MemoryMarshal.GetReference(_buffer.Span))
             {
-                fixed (byte* bufferPtr = &_buffer.Span.DangerousGetPinnableReference())
+                NativeOverlapped* overlapped = AllocateNativeOverlapped();
+                try
                 {
                     Debug.Assert(_singleBufferHandleState == SingleBufferHandleState.None);
                     _singleBufferHandleState = SingleBufferHandleState.InProcess;
                     var wsaBuffer = new WSABuffer { Length = _count, Pointer = (IntPtr)(bufferPtr + _offset) };
 
-                    socketError = Interop.Winsock.WSASendTo(
-                        handle.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                    SocketError socketError = Interop.Winsock.WSASendTo(
+                        handle,
                         ref wsaBuffer,
                         1,
                         out int bytesTransferred,
@@ -755,31 +782,25 @@ namespace System.Net.Sockets
                         _socketAddress.Size,
                         overlapped,
                         IntPtr.Zero);
-                    GC.KeepAlive(handle); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
-                    socketError = ProcessIOCPResultWithSingleBufferHandle(socketError, bytesTransferred);
-                    return socketError;
+                    return ProcessIOCPResultWithSingleBufferHandle(socketError, bytesTransferred, overlapped);
                 }
-            }
-            catch
-            {
-                _singleBufferHandleState = SingleBufferHandleState.None;
-                throw;
-            }
-            finally
-            {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
+                catch
+                {
+                    _singleBufferHandleState = SingleBufferHandleState.None;
+                    FreeNativeOverlapped(overlapped);
+                    throw;
+                }
             }
         }
 
-        internal unsafe SocketError DoOperationSendToMultiBuffer(SafeCloseSocket handle)
+        internal unsafe SocketError DoOperationSendToMultiBuffer(SafeSocketHandle handle)
         {
-            SocketError socketError = SocketError.Success;
             NativeOverlapped* overlapped = AllocateNativeOverlapped();
             try
             {
-                socketError = Interop.Winsock.WSASendTo(
-                    handle.DangerousGetHandle(), // to minimize chances of handle recycling from misuse, this should use DangerousAddRef/Release, but it adds too much overhead
+                SocketError socketError = Interop.Winsock.WSASendTo(
+                    handle,
                     _wsaBufferArray,
                     _bufferListInternal.Count,
                     out int bytesTransferred,
@@ -788,14 +809,13 @@ namespace System.Net.Sockets
                     _socketAddress.Size,
                     overlapped,
                     IntPtr.Zero);
-                GC.KeepAlive(handle); // small extra safe guard against handle getting collected/finalized while P/Invoke in progress
 
-                socketError = ProcessIOCPResult(socketError == SocketError.Success, bytesTransferred);
-                return socketError;
+                return ProcessIOCPResult(socketError == SocketError.Success, bytesTransferred, overlapped);
             }
-            finally
+            catch
             {
-                FreeNativeOverlappedIfNotPending(overlapped, socketError);
+                FreeNativeOverlapped(overlapped);
+                throw;
             }
         }
 
@@ -921,8 +941,8 @@ namespace System.Net.Sockets
 
             if (_singleBufferHandleState != SingleBufferHandleState.None)
             {
-                _singleBufferHandle.Dispose();
                 _singleBufferHandleState = SingleBufferHandleState.None;
+                _singleBufferHandle.Dispose();
             }
 
             if (_multipleBufferGCHandles != null)
@@ -960,7 +980,7 @@ namespace System.Net.Sockets
 
         // Sets up an Overlapped object for SendPacketsAsync.
         private unsafe Interop.Winsock.TransmitPacketsElement[] SetupPinHandlesSendPackets(
-            SendPacketsElement[] sendPacketsElementsCopy, int sendPacketsElementsFileCount, int sendPacketsElementsBufferCount)
+            SendPacketsElement[] sendPacketsElementsCopy, int sendPacketsElementsFileCount, int sendPacketsElementsFileStreamCount, int sendPacketsElementsBufferCount)
         {
             if (_pinState != PinState.None)
             {
@@ -968,7 +988,7 @@ namespace System.Net.Sockets
             }
 
             // Alloc native descriptor.
-            var sendPacketsDescriptor = new Interop.Winsock.TransmitPacketsElement[sendPacketsElementsFileCount + sendPacketsElementsBufferCount];
+            var sendPacketsDescriptor = new Interop.Winsock.TransmitPacketsElement[sendPacketsElementsFileCount + sendPacketsElementsFileStreamCount + sendPacketsElementsBufferCount];
 
             // Number of things to pin is number of buffers + 1 (native descriptor).
             // Ensure we have properly sized object array.
@@ -993,10 +1013,10 @@ namespace System.Net.Sockets
             int index = 1;
             foreach (SendPacketsElement spe in sendPacketsElementsCopy)
             {
-                if (spe != null && spe._buffer != null && spe._count > 0)
+                if (spe?.Buffer != null && spe.Count > 0)
                 {
                     Debug.Assert(!_multipleBufferGCHandles[index].IsAllocated);
-                    _multipleBufferGCHandles[index] = GCHandle.Alloc(spe._buffer, GCHandleType.Pinned);
+                    _multipleBufferGCHandles[index] = GCHandle.Alloc(spe.Buffer, GCHandleType.Pinned);
 
                     index++;
                 }
@@ -1009,22 +1029,43 @@ namespace System.Net.Sockets
             {
                 if (spe != null)
                 {
-                    if (spe._buffer != null && spe._count > 0)
+                    if (spe.Buffer != null && spe.Count > 0)
                     {
                         // This element is a buffer.
-                        sendPacketsDescriptor[descriptorIndex].buffer = Marshal.UnsafeAddrOfPinnedArrayElement(spe._buffer, spe._offset);
-                        sendPacketsDescriptor[descriptorIndex].length = (uint)spe._count;
-                        sendPacketsDescriptor[descriptorIndex].flags = (Interop.Winsock.TransmitPacketsElementFlags)spe._flags;
+                        sendPacketsDescriptor[descriptorIndex].buffer = Marshal.UnsafeAddrOfPinnedArrayElement(spe.Buffer, spe.Offset);
+                        sendPacketsDescriptor[descriptorIndex].length = (uint)spe.Count;
+                        sendPacketsDescriptor[descriptorIndex].flags =
+                            Interop.Winsock.TransmitPacketsElementFlags.Memory | (spe.EndOfPacket
+                                ? Interop.Winsock.TransmitPacketsElementFlags.EndOfPacket
+                                : 0);
                         descriptorIndex++;
                     }
-                    else if (spe._filePath != null)
+                    else if (spe.FilePath != null)
                     {
                         // This element is a file.
                         sendPacketsDescriptor[descriptorIndex].fileHandle = _sendPacketsFileStreams[fileIndex].SafeFileHandle.DangerousGetHandle();
-                        sendPacketsDescriptor[descriptorIndex].fileOffset = spe._offset;
-                        sendPacketsDescriptor[descriptorIndex].length = (uint)spe._count;
-                        sendPacketsDescriptor[descriptorIndex].flags = (Interop.Winsock.TransmitPacketsElementFlags)spe._flags;
+                        sendPacketsDescriptor[descriptorIndex].fileOffset = spe.OffsetLong;
+                        sendPacketsDescriptor[descriptorIndex].length = (uint)spe.Count;
+                        sendPacketsDescriptor[descriptorIndex].flags =
+                            Interop.Winsock.TransmitPacketsElementFlags.File | (spe.EndOfPacket
+                                ? Interop.Winsock.TransmitPacketsElementFlags.EndOfPacket
+                                : 0);
                         fileIndex++;
+                        descriptorIndex++;
+                    }
+                    else if (spe.FileStream != null)
+                    {
+                        // This element is a file stream. SendPacketsElement throws if the FileStream is not opened asynchronously;
+                        // Synchronously opened FileStream can't be used concurrently (e.g. multiple SendPacketsElements with the same
+                        // FileStream).
+                        sendPacketsDescriptor[descriptorIndex].fileHandle = spe.FileStream.SafeFileHandle.DangerousGetHandle();
+                        sendPacketsDescriptor[descriptorIndex].fileOffset = spe.OffsetLong;
+
+                        sendPacketsDescriptor[descriptorIndex].length = (uint)spe.Count;
+                        sendPacketsDescriptor[descriptorIndex].flags =
+                            Interop.Winsock.TransmitPacketsElementFlags.File | (spe.EndOfPacket
+                                ? Interop.Winsock.TransmitPacketsElementFlags.EndOfPacket
+                                : 0);
                         descriptorIndex++;
                     }
                 }
@@ -1069,7 +1110,6 @@ namespace System.Net.Sockets
             try
             {
                 Debug.Assert(_singleBufferHandleState == SingleBufferHandleState.Set);
-                Debug.Assert(_singleBufferHandle.HasPointer);
                 bool userBuffer = _count >= _acceptAddressBufferCount;
 
                 _currentSocket.GetAcceptExSockaddrs(
@@ -1132,6 +1172,7 @@ namespace System.Net.Sockets
 
         private void CompleteCore()
         {
+            _strongThisRef.Value = null; // null out this reference from the overlapped so this isn't kept alive artificially
             if (_singleBufferHandleState != SingleBufferHandleState.None)
             {
                 CompleteCoreSpin();
@@ -1139,16 +1180,29 @@ namespace System.Net.Sockets
 
             void CompleteCoreSpin() // separate out to help inline the fast path
             {
+                // The operation could complete so quickly that it races with the code
+                // initiating it.  Wait until that initiation code has completed before
+                // we try to undo the state it configures.
                 var sw = new SpinWait();
                 while (_singleBufferHandleState == SingleBufferHandleState.InProcess)
                 {
                     sw.SpinOnce();
                 }
 
+                // Remove any cancellation registration.  First dispose the registration
+                // to ensure that cancellation will either never fine or will have completed
+                // firing before we continue.  Only then can we safely null out the overlapped.
+                _registrationToCancelPendingIO.Dispose();
+                unsafe
+                {
+                    _pendingOverlappedForCancellation = null;
+                }
+
+                // Release any GC handles.
                 if (_singleBufferHandleState == SingleBufferHandleState.Set)
                 {
-                    _singleBufferHandle.Dispose();
                     _singleBufferHandleState = SingleBufferHandleState.None;
+                    _singleBufferHandle.Dispose();
                 }
             }
         }
@@ -1190,7 +1244,10 @@ namespace System.Net.Sockets
 
         private static readonly unsafe IOCompletionCallback s_completionPortCallback = delegate (uint errorCode, uint numBytes, NativeOverlapped* nativeOverlapped)
         {
-            var saea = (SocketAsyncEventArgs)ThreadPoolBoundHandle.GetNativeOverlappedState(nativeOverlapped);
+            var saeaBox = (StrongBox<SocketAsyncEventArgs>)ThreadPoolBoundHandle.GetNativeOverlappedState(nativeOverlapped);
+            SocketAsyncEventArgs saea = saeaBox.Value;
+            Debug.Assert(saea != null);
+
             if ((SocketError)errorCode == SocketError.Success)
             {
                 saea.FreeNativeOverlapped(nativeOverlapped);

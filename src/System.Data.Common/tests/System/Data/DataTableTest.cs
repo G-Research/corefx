@@ -32,13 +32,16 @@ using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization.Formatters.Tests;
+using System.Text.RegularExpressions;
 using System.Xml;
+using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 
 namespace System.Data.Tests
 {
-    public class DataTableTest : RemoteExecutorTestBase
+    public class DataTableTest
     {
         public DataTableTest()
         {
@@ -389,6 +392,25 @@ namespace System.Data.Tests
         }
 
         [Fact]
+        public void DataColumnTypeSerialization()
+        {
+            DataTable dt = new DataTable("MyTable");
+            DataColumn dc = new DataColumn("dc", typeof(int));
+            dt.Columns.Add(dc);
+            dt.RemotingFormat = SerializationFormat.Binary;
+
+            DataTable dtDeserialized;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                BinaryFormatter bf = new BinaryFormatter();
+                bf.Serialize(ms, dt);
+                ms.Seek(0, SeekOrigin.Begin);
+                dtDeserialized = (DataTable)bf.Deserialize(ms);
+            }
+            Assert.Equal(dc.DataType, dtDeserialized.Columns[0].DataType);
+        }
+
+        [Fact]
         public void SelectExceptions()
         {
             DataTable T = new DataTable("test");
@@ -677,7 +699,6 @@ namespace System.Data.Tests
 
             /*
 			try {
-				// FIXME: LAMESPEC: Why the exception is thrown why... why... 
 				Mom.Select ("Child.Name = 'Jack'");
 Assert.False(true);
 			} catch (Exception e) {
@@ -844,7 +865,7 @@ Assert.False(true);
         [Fact]
         public void PropertyExceptions()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 DataSet set = new DataSet();
                 DataTable table = new DataTable();
@@ -894,7 +915,7 @@ Assert.False(true);
 
                 Assert.Throws<DataException>(() => table.Prefix = "Prefix#1");
 
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -1229,8 +1250,12 @@ Assert.False(true);
                 Assert.Equal(typeof(ConstraintException), ex.GetType());
                 Assert.Null(ex.InnerException);
                 Assert.NotNull(ex.Message);
-                Assert.True(ex.Message.IndexOf("'id'") != -1);
-                Assert.True(ex.Message.IndexOf("'3'") != -1);
+
+                // \p{Pi} any kind of opening quote https://www.compart.com/en/unicode/category/Pi
+                // \p{Pf} any kind of closing quote https://www.compart.com/en/unicode/category/Pf
+                // \p{Po} any kind of punctuation character that is not a dash, bracket, quote or connector https://www.compart.com/en/unicode/category/Po
+                Assert.Matches(@"[\p{Pi}\p{Po}]" + "id" + @"[\p{Pf}\p{Po}]", ex.Message);
+                Assert.Matches(@"[\p{Pi}\p{Po}]" + "3" + @"[\p{Pf}\p{Po}]", ex.Message);
             }
 
             // check row states
@@ -1333,8 +1358,12 @@ Assert.False(true);
                 Assert.Equal(typeof(ConstraintException), ex.GetType());
                 Assert.Null(ex.InnerException);
                 Assert.NotNull(ex.Message);
-                Assert.True(ex.Message.IndexOf("'col'") != -1);
-                Assert.True(ex.Message.IndexOf("'1'") != -1);
+
+                // \p{Pi} any kind of opening quote https://www.compart.com/en/unicode/category/Pi
+                // \p{Pf} any kind of closing quote https://www.compart.com/en/unicode/category/Pf
+                // \p{Po} any kind of punctuation character that is not a dash, bracket, quote or connector https://www.compart.com/en/unicode/category/Po
+                Assert.Matches(@"[\p{Pi}\p{Po}]" + "col" + @"[\p{Pf}\p{Po}]", ex.Message);
+                Assert.Matches(@"[\p{Pi}\p{Po}]" + "1" + @"[\p{Pf}\p{Po}]", ex.Message);
             }
         }
 
@@ -3303,7 +3332,7 @@ Assert.False(true);
         [Fact]
         public void WriteXmlSchema()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CultureInfo.CurrentCulture = new CultureInfo("en-GB");
 
@@ -3382,7 +3411,7 @@ Assert.False(true);
 
                 Assert.Equal("</xs:schema>", TextString);
 
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -4015,8 +4044,7 @@ Assert.False(true);
 
     [Serializable]
 
-    public class AppDomainsAndFormatInfo : RemoteExecutorTestBase
-    {
+    public class AppDomainsAndFormatInfo    {
         public void Remote()
         {
             int n = (int)Convert.ChangeType("5", typeof(int));
@@ -4052,7 +4080,7 @@ Assert.False(true);
         [Fact]
         public void Bug82109()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 DataTable tbl = new DataTable();
                 tbl.Columns.Add("data", typeof(DateTime));
@@ -4069,7 +4097,7 @@ Assert.False(true);
                 CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
                 Select(tbl);
 
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 

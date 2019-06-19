@@ -6,11 +6,12 @@ using System.Collections;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security;
+using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 
 namespace System.Tests
 {
-    public class SetEnvironmentVariable : RemoteExecutorTestBase
+    public class SetEnvironmentVariable
     {
         private const string NullString = "\u0000";
 
@@ -34,7 +35,6 @@ namespace System.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, ".NET Framework does not have the fix to allow arbitrary length environment variables.")]
         public void AllowAnyVariableLengths()
         {
             // longer than 32767
@@ -53,7 +53,6 @@ namespace System.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, ".NET Framework does not have the fix to allow arbitrary length environment variables.")]
         public void AllowAnyVariableValueLengths()
         {
             string var = "Test_SetEnvironmentVariable_AllowAnyVariableValueLengths";
@@ -73,10 +72,9 @@ namespace System.Tests
 
         [Fact]
         [PlatformSpecific(TestPlatforms.Windows)]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, ".NET Framework does not have the fix to allow arbitrary length environment variables.")]
         public void EnvironmentVariableTooLarge_Throws()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 string longVar;
                 string val = "Test_SetEnvironmentVariable_EnvironmentVariableTooLarge_Throws";
@@ -90,7 +88,7 @@ namespace System.Tests
                 catch (OutOfMemoryException)
                 {
                     // not enough memory to allocate a string at test time
-                    return SuccessExitCode;
+                    return RemoteExecutor.SuccessExitCode;
                 }
 
                 try
@@ -103,16 +101,15 @@ namespace System.Tests
                 {
                     // expected
                 }
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
         [PlatformSpecific(TestPlatforms.Windows)]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, ".NET Framework does not have the fix to allow arbitrary length environment variables.")]
         public void EnvironmentVariableValueTooLarge_Throws()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 string var = "Test_SetEnvironmentVariable_EnvironmentVariableValueTooLarge_Throws";
                 string longVal;
@@ -126,7 +123,7 @@ namespace System.Tests
                 catch (OutOfMemoryException)
                 {
                     // not enough memory to allocate a string at test time
-                    return SuccessExitCode;
+                    return RemoteExecutor.SuccessExitCode;
                 }
 
                 try
@@ -139,7 +136,7 @@ namespace System.Tests
                 {
                     // expected
                 }
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -308,7 +305,7 @@ namespace System.Tests
             }
             finally
             {
-                Environment.SetEnvironmentVariable(varName, String.Empty);
+                Environment.SetEnvironmentVariable(varName, string.Empty);
             }
         }
 
@@ -328,8 +325,8 @@ namespace System.Tests
             }
             finally
             {
-                Environment.SetEnvironmentVariable(varName, String.Empty);
-                Environment.SetEnvironmentVariable(varNamePrefix, String.Empty);
+                Environment.SetEnvironmentVariable(varName, string.Empty);
+                Environment.SetEnvironmentVariable(varNamePrefix, string.Empty);
             }
         }
 
@@ -348,7 +345,7 @@ namespace System.Tests
             }
             finally
             {
-                Environment.SetEnvironmentVariable(varName, String.Empty);
+                Environment.SetEnvironmentVariable(varName, string.Empty);
             }
         }
 
@@ -362,7 +359,7 @@ namespace System.Tests
                 Environment.SetEnvironmentVariable(varName, null);
             }
 
-            Environment.SetEnvironmentVariable("TestDeletingNonExistingEnvironmentVariable", String.Empty);
+            Environment.SetEnvironmentVariable("TestDeletingNonExistingEnvironmentVariable", string.Empty);
         }
     }
 }

@@ -23,15 +23,16 @@ namespace System.ServiceModel.Syndication.Tests
             try
             {
                 // *** SETUP *** \\
-                SyndicationFeed sf = new SyndicationFeed("First feed on .net core ever!!", "This is the first feed on .net core ever!", new Uri("https://github.com/dotnet/wcf"));
+                var sf = new SyndicationFeed("First feed on .net core ever!!", "This is the first feed on .net core ever!", new Uri("https://github.com/dotnet/wcf"));
                 Assert.True(sf != null);
 
-                XmlWriter xmlw = XmlWriter.Create(filePath);
-                Rss20FeedFormatter rssf = new Rss20FeedFormatter(sf);
+                using (XmlWriter xmlw = XmlWriter.Create(filePath))
+                {
+                    var rssf = new Rss20FeedFormatter(sf);
 
-                // *** EXECUTE *** \\
-                rssf.WriteTo(xmlw);
-                xmlw.Close();
+                    // *** EXECUTE *** \\
+                    rssf.WriteTo(xmlw);
+                }
 
                 // *** VALIDATE *** \\
                 Assert.True(File.Exists(filePath));
@@ -51,16 +52,20 @@ namespace System.ServiceModel.Syndication.Tests
             try
             {
                 // *** SETUP *** \\\
-                XmlReader xmlr = XmlReader.Create(@"SimpleRssFeed.xml");
-                SyndicationFeed sf = SyndicationFeed.Load(xmlr);
-                Assert.True(sf != null);
+                SyndicationFeed sf;
+                using (XmlReader xmlr = XmlReader.Create("TestFeeds/SimpleRssFeed.xml"))
+                {
+                    sf = SyndicationFeed.Load(xmlr);
+                    Assert.True(sf != null);
+                }
 
                 // *** EXECUTE *** \\
                 //Write the same feed that was read.
-                XmlWriter xmlw = XmlWriter.Create(path);
-                Rss20FeedFormatter atomFeed = new Rss20FeedFormatter(sf);
-                atomFeed.WriteTo(xmlw);
-                xmlw.Close();
+                using (XmlWriter xmlw = XmlWriter.Create(path))
+                {
+                    var rss20FeedFormatter = new Rss20FeedFormatter(sf);
+                    rss20FeedFormatter.WriteTo(xmlw);
+                }
 
                 // *** VALIDATE *** \\
                 Assert.True(File.Exists(path));
@@ -80,19 +85,21 @@ namespace System.ServiceModel.Syndication.Tests
             try
             {
                 // *** SETUP *** \\\
-                XmlReaderSettings settingsReader = new XmlReaderSettings();
-                XmlReader xmlr = XmlReader.Create(@"rssSpecExample.xml", settingsReader);
-                SyndicationFeed sf = SyndicationFeed.Load(xmlr);
-                Assert.True(sf != null);
+                SyndicationFeed sf;
+                using (XmlReader xmlr = XmlReader.Create("TestFeeds/rssSpecExample.xml"))
+                {
+                    sf = SyndicationFeed.Load(xmlr);
+                    Assert.True(sf != null);
+                }
 
                 // *** EXECUTE *** \\
                 //Write the same feed that was read.
                 XmlWriterSettings settingsWriter = new XmlWriterSettings();
-                XmlWriter xmlw = XmlWriter.Create(path, settingsWriter);
-                Rss20FeedFormatter atomFeed = new Rss20FeedFormatter(sf);
-                atomFeed.WriteTo(xmlw);
-
-                xmlw.Close();
+                using (XmlWriter xmlw = XmlWriter.Create(path, settingsWriter))
+                {
+                    var rss20FeedFormatter = new Rss20FeedFormatter(sf);
+                    rss20FeedFormatter.WriteTo(xmlw);
+                }
 
                 // *** VALIDATE *** \\
                 Assert.True(File.Exists(path));
@@ -112,17 +119,20 @@ namespace System.ServiceModel.Syndication.Tests
             try
             {
                 // *** SETUP *** \\\
-                XmlReaderSettings setting = new XmlReaderSettings();
-                XmlReader xmlr = XmlReader.Create(@"SimpleAtomFeed.xml", setting);
-                SyndicationFeed sf = SyndicationFeed.Load(xmlr);
-                Assert.True(sf != null);
+                SyndicationFeed sf;
+                using (XmlReader xmlr = XmlReader.Create("TestFeeds/SimpleAtomFeed.xml"))
+                {
+                    sf = SyndicationFeed.Load(xmlr);
+                    Assert.True(sf != null);
+                }
 
                 // *** EXECUTE *** \\
                 //Write the same feed that was read.
-                XmlWriter xmlw = XmlWriter.Create(path);
-                Atom10FeedFormatter atomFeed = new Atom10FeedFormatter(sf);
-                atomFeed.WriteTo(xmlw);
-                xmlw.Close();
+                using (XmlWriter xmlw = XmlWriter.Create(path))
+                {
+                    var atom10FeedFormatter = new Atom10FeedFormatter(sf);
+                    atom10FeedFormatter.WriteTo(xmlw);
+                }
 
                 // *** VALIDATE *** \\
                 Assert.True(File.Exists(path));
@@ -142,19 +152,20 @@ namespace System.ServiceModel.Syndication.Tests
             try
             {
                 // *** SETUP *** \\\
-                XmlReaderSettings readerSettings = new XmlReaderSettings();
-                XmlReader xmlr = XmlReader.Create(@"atom_spec_example.xml", readerSettings);
-                SyndicationFeed sf = SyndicationFeed.Load(xmlr);
-                Assert.True(sf != null);
+                SyndicationFeed sf;
+                using (XmlReader xmlr = XmlReader.Create("TestFeeds/atom_spec_example.xml"))
+                {
+                    sf = SyndicationFeed.Load(xmlr);
+                    Assert.True(sf != null);
+                }
 
                 // *** EXECUTE *** \\
                 //Write the same feed that was read.
-                XmlWriterSettings writerSettings = new XmlWriterSettings();
-
-                XmlWriter xmlw = XmlWriter.Create(path, writerSettings);
-                Atom10FeedFormatter atomFeed = new Atom10FeedFormatter(sf);
-                atomFeed.WriteTo(xmlw);
-                xmlw.Close();
+                using (XmlWriter xmlw = XmlWriter.Create(path))
+                {
+                    var atom10FeedFormatter = new Atom10FeedFormatter(sf);
+                    atom10FeedFormatter.WriteTo(xmlw);
+                }
 
                 // *** VALIDATE *** \\
                 Assert.True(File.Exists(path));
@@ -195,22 +206,19 @@ namespace System.ServiceModel.Syndication.Tests
                 feed.BaseUri = new Uri("http://mypage.com");
 
                 // Write to XML > rss
-                XmlWriterSettings settings = new XmlWriterSettings();
-                XmlWriter xmlwRss = XmlWriter.Create(RssPath, settings);
-                Rss20FeedFormatter rssff = new Rss20FeedFormatter(feed);
+                using (XmlWriter xmlwRss = XmlWriter.Create(RssPath))
+                {
+                    Rss20FeedFormatter rssff = new Rss20FeedFormatter(feed);
+                    rssff.WriteTo(xmlwRss);
+                }
 
                 // Write to XML > atom
 
-                XmlWriter xmlwAtom = XmlWriter.Create(AtomPath);
-                Atom10FeedFormatter atomf = new Atom10FeedFormatter(feed);
-
-
-                // *** EXECUTE *** \\
-                rssff.WriteTo(xmlwRss);
-                xmlwRss.Close();
-
-                atomf.WriteTo(xmlwAtom); ;
-                xmlwAtom.Close();
+                using (XmlWriter xmlwAtom = XmlWriter.Create(AtomPath))
+                {
+                    Atom10FeedFormatter atomf = new Atom10FeedFormatter(feed);
+                    atomf.WriteTo(xmlwAtom);
+                }
 
                 // *** ASSERT *** \\
                 Assert.True(File.Exists(RssPath));
@@ -228,7 +236,7 @@ namespace System.ServiceModel.Syndication.Tests
         public static void SyndicationFeed_Load_Rss()
         {
             XmlReaderSettings setting = new XmlReaderSettings();
-            using (XmlReader reader = XmlReader.Create(@"rssSpecExample.xml", setting))
+            using (XmlReader reader = XmlReader.Create("TestFeeds/rssSpecExample.xml", setting))
             {
                 SyndicationFeed rss = SyndicationFeed.Load(reader);
                 Assert.True(rss.Items != null);
@@ -239,7 +247,7 @@ namespace System.ServiceModel.Syndication.Tests
         public static void SyndicationFeed_Load_Atom()
         {
             XmlReaderSettings setting = new XmlReaderSettings();
-            using (XmlReader reader = XmlReader.Create(@"atom_spec_example.xml", setting))
+            using (XmlReader reader = XmlReader.Create("TestFeeds/atom_spec_example.xml", setting))
             {
                 SyndicationFeed atom = SyndicationFeed.Load(reader);
                 Assert.True(atom.Items != null);
@@ -247,9 +255,10 @@ namespace System.ServiceModel.Syndication.Tests
         }
 
         [Fact]
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Disjoint items not supported on NetFX")]
         public static void SyndicationFeed_Rss_TestDisjointItems()
         {
-            using (XmlReader reader = XmlReader.Create(@"RssDisjointItems.xml"))
+            using (XmlReader reader = XmlReader.Create("TestFeeds/RssDisjointItems.xml"))
             {
                 // *** EXECUTE *** \\
                 SyndicationFeed sf = SyndicationFeed.Load(reader);
@@ -267,9 +276,10 @@ namespace System.ServiceModel.Syndication.Tests
 
 
         [Fact]
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Disjoint items not supported on NetFX")]
         public static void SyndicationFeed_Atom_TestDisjointItems()
         {
-            using (XmlReader reader = XmlReader.Create(@"AtomDisjointItems.xml"))
+            using (XmlReader reader = XmlReader.Create("TestFeeds/AtomDisjointItems.xml"))
             {
                 // *** EXECUTE *** \\
                 SyndicationFeed sf = SyndicationFeed.Load(reader);
@@ -286,10 +296,11 @@ namespace System.ServiceModel.Syndication.Tests
         }
 
         [Fact]
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Deferred date exception throwing not implemented on NetFX")]
         public static void SyndicationFeed_Rss_WrongDateFormat()
         {
             // *** SETUP *** \\
-            XmlReader reader = XmlReader.Create(@"rssSpecExampleWrongDateFormat.xml");
+            XmlReader reader = XmlReader.Create("TestFeeds/rssSpecExampleWrongDateFormat.xml");
 
             // *** EXECUTE *** \\
             SyndicationFeed res = SyndicationFeed.Load(reader);
@@ -302,19 +313,19 @@ namespace System.ServiceModel.Syndication.Tests
             SyndicationItem[] items = res.Items.ToArray();
             DateTimeOffset dateTimeOffset;
             Assert.Throws<XmlException>(() => dateTimeOffset = items[2].PublishDate);
-        }
+        }    
 
         [Fact]
         public static void AtomEntryPositiveTest()
         {
-            string file = @"brief-entry-noerror.xml";
+            string file = "TestFeeds/brief-entry-noerror.xml";
             ReadWriteSyndicationItem(file, (itemObject) => new Atom10ItemFormatter(itemObject));
         }
 
         [Fact]
         public static void AtomEntryPositiveTest_write()
         {
-            string file = @"AtomEntryTest.xml";
+            string file = "TestFeeds/AtomEntryTest.xml";
             string serializeFilePath = Path.GetTempFileName();
             bool toDeletedFile = true;
 
@@ -361,7 +372,7 @@ namespace System.ServiceModel.Syndication.Tests
         [Fact]
         public static void AtomFeedPositiveTest()
         {
-            string dataFile = @"atom_feeds.dat";
+            string dataFile = "TestFeeds/atom_feeds.dat";
             List<string> fileList = GetTestFilesForFeedTest(dataFile);
             List<AllowableDifference> allowableDifferences = GetAtomFeedPositiveTestAllowableDifferences();
 
@@ -374,14 +385,14 @@ namespace System.ServiceModel.Syndication.Tests
         [Fact]
         public static void RssEntryPositiveTest()
         {
-            string file = @"RssEntry.xml";
+            string file = "TestFeeds/RssEntry.xml";
             ReadWriteSyndicationItem(file, (itemObject) => new Rss20ItemFormatter(itemObject));
         }
 
         [Fact]
         public static void RssFeedPositiveTest()
         {
-            string dataFile = @"rss_feeds.dat";
+            string dataFile = "TestFeeds/rss_feeds.dat";
             List<string> fileList = GetTestFilesForFeedTest(dataFile);
             List<AllowableDifference> allowableDifferences = GetRssFeedPositiveTestAllowableDifferences();
 
@@ -394,7 +405,7 @@ namespace System.ServiceModel.Syndication.Tests
         [Fact]
         public static void DiffAtomNsTest()
         {
-            string file = @"diff_atom_ns.xml";
+            string file = "TestFeeds/FailureFeeds/diff_atom_ns.xml";
             using (XmlReader reader = XmlReader.Create(file))
             {
                 Assert.Throws(typeof(XmlException), () => { SyndicationItem.Load(reader); });
@@ -404,7 +415,7 @@ namespace System.ServiceModel.Syndication.Tests
         [Fact]
         public static void DiffRssNsTest()
         {
-            string file = @"diff_rss_ns.xml";
+            string file = "TestFeeds/FailureFeeds/diff_rss_ns.xml";
             using (XmlReader reader = XmlReader.Create(file))
             {
                 Assert.Throws(typeof(XmlException), () => { SyndicationItem.Load(reader); });
@@ -414,7 +425,7 @@ namespace System.ServiceModel.Syndication.Tests
         [Fact]
         public static void DiffRssVersionTest()
         {
-            string file = @"diff_rss_version.xml";
+            string file = "TestFeeds/FailureFeeds/diff_rss_version.xml";
             using (XmlReader reader = XmlReader.Create(file))
             {
                 Assert.Throws(typeof(XmlException), () => { SyndicationItem.Load(reader); });
@@ -424,7 +435,7 @@ namespace System.ServiceModel.Syndication.Tests
         [Fact]
         public static void NoRssVersionTest()
         {
-            string file = @"no_rss_version.xml";
+            string file = "TestFeeds/FailureFeeds/no_rss_version.xml";
             using (XmlReader reader = XmlReader.Create(file))
             {
                 Assert.Throws(typeof(XmlException), () => { SyndicationItem.Load(reader); });
@@ -487,7 +498,7 @@ namespace System.ServiceModel.Syndication.Tests
             }
         }
 
-        private static void ReadWriteSyndicationFeed(string file, Func<SyndicationFeed, SyndicationFeedFormatter> feedFormatter, List<AllowableDifference> allowableDifferences = null)
+        private static void ReadWriteSyndicationFeed(string file, Func<SyndicationFeed, SyndicationFeedFormatter> feedFormatter, List<AllowableDifference> allowableDifferences = null, Action<SyndicationFeed> verifySyndicationFeedRead = null)
         {
             string serializeFilePath = Path.GetTempFileName();
             bool toDeletedFile = true;
@@ -500,6 +511,7 @@ namespace System.ServiceModel.Syndication.Tests
                     using (XmlReader reader = XmlDictionaryReader.CreateTextReader(fileStream, XmlDictionaryReaderQuotas.Max))
                     {
                         feedObjct = SyndicationFeed.Load(reader);
+                        verifySyndicationFeedRead?.Invoke(feedObjct);
                     }
                 }
 
@@ -618,7 +630,7 @@ namespace System.ServiceModel.Syndication.Tests
                 {
                     if (!file.StartsWith("#"))
                     {
-                        file = file.Trim();
+                        file = Path.Combine("TestFeeds", file.Trim());
                         if (File.Exists(file))
                         {
                             fileList.Add(Path.GetFullPath(file));

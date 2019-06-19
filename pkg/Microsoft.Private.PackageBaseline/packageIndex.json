@@ -5,6 +5,13 @@
         "net45": "4.0.0.0"
       }
     },
+    "CoreFx.Private.TestUtilities": {
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "1.0.0.0": "4.5.0",
+        "1.0.1.0": "4.6.0"
+      }
+    },
     "CustomMarshalers": {
       "InboxOn": {
         "net45": "4.0.0.0"
@@ -19,6 +26,21 @@
       "InboxOn": {
         "net45": "4.0.0.0"
       }
+    },
+    "Microsoft.Bcl.AsyncInterfaces": {
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "1.0.0.0": "1.0.0"
+      }
+    },
+    "Microsoft.Bcl.HashCode": {
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "1.0.0.0": "1.0.0"
+      }
+    },
+    "Microsoft.Bcl.Json.Sources": {
+      "InboxOn": {}
     },
     "Microsoft.Build": {
       "InboxOn": {
@@ -55,9 +77,10 @@
         "4.0.1",
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "netcoreapp2.0": "4.0.3.0",
         "netcoreapp2.1": "4.0.4.0",
@@ -75,7 +98,8 @@
         "portable46-wp81+wpa81": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.4.0",
+        "uap10.0.16299": "4.0.0.0",
+        "uap10.0.16300": "4.0.4.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -98,9 +122,21 @@
       }
     },
     "Microsoft.Diagnostics.Tracing.EventSource.Redist": {
+      "StableVersions": [
+        "2.0.0",
+        "2.0.1"
+      ],
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
-        "2.0.0.0": "2.0.0"
+        "2.0.0.0": "2.0.0",
+        "2.0.1.0": "2.0.1",
+        "2.0.2.0": "2.1.0"
+      }
+    },
+    "Microsoft.IO.Redist": {
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "4.0.0.0": "4.6.0"
       }
     },
     "Microsoft.JScript": {
@@ -114,9 +150,15 @@
         "1.0.1",
         "1.0.2",
         "1.1.0",
-        "2.0.0"
+        "2.0.0",
+        "2.1.0",
+        "2.1.1",
+        "2.1.2",
+        "2.1.3",
+        "2.1.4",
+        "2.2.0"
       ],
-      "BaselineVersion": "2.0.0",
+      "BaselineVersion": "3.0.0",
       "InboxOn": {}
     },
     "Microsoft.NETCore.Targets": {
@@ -125,9 +167,10 @@
         "1.0.1",
         "1.0.2",
         "1.1.0",
-        "2.0.0"
+        "2.0.0",
+        "2.1.0"
       ],
-      "BaselineVersion": "2.0.0",
+      "BaselineVersion": "3.0.0",
       "InboxOn": {}
     },
     "Microsoft.Phone": {
@@ -163,6 +206,9 @@
     "Microsoft.Private.CoreFx.NETCoreApp": {
       "InboxOn": {}
     },
+    "Microsoft.Private.CoreFx.OOB": {
+      "InboxOn": {}
+    },
     "Microsoft.Private.PackageBaseline": {
       "InboxOn": {}
     },
@@ -171,9 +217,10 @@
         "10.0.1",
         "10.0.0",
         "10.1.0",
-        "10.2.0"
+        "10.2.0",
+        "10.3.0"
       ],
-      "BaselineVersion": "10.2.0",
+      "BaselineVersion": "10.3.0",
       "InboxOn": {
         "netcoreapp2.0": "10.0.3.0",
         "netcoreapp2.1": "10.0.4.0",
@@ -183,7 +230,7 @@
         "portable46-win81+wpa81": "10.0.0.0",
         "portable46-net451+win81": "10.0.0.0",
         "portable45-net45+win8": "10.0.0.0",
-        "uap10.0.15138": "10.0.0.0",
+        "uap10.0.16299": "10.0.0.0",
         "win8": "10.0.0.0",
         "wpa81": "10.0.0.0"
       },
@@ -203,6 +250,12 @@
     "Microsoft.VisualBasic.Compatibility.Data": {
       "InboxOn": {
         "net45": "10.0.0.0"
+      }
+    },
+    "Microsoft.VisualBasic.Core": {
+      "InboxOn": {
+        "netcoreapp3.0": "10.0.4.0",
+        "uap10.0.16300": "10.0.4.0"
       }
     },
     "Microsoft.VisualC": {
@@ -229,7 +282,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -245,43 +298,72 @@
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.1.0.0": "4.4.0",
-        "4.1.1.0": "4.5.0"
+        "4.1.1.0": "4.5.0",
+        "4.1.2.0": "4.6.0"
       }
     },
     "Microsoft.Win32.Registry.AccessControl": {
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.0.2.0": "4.4.0",
-        "4.0.3.0": "4.5.0"
+        "4.0.3.0": "4.5.0",
+        "4.0.4.0": "4.6.0"
+      }
+    },
+    "Microsoft.Win32.SystemEvents": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "4.0.0.0": "4.5.0",
+        "4.0.1.0": "4.6.0"
       }
     },
     "Microsoft.Windows.Compatibility": {
+      "StableVersions": [
+        "2.0.0",
+        "2.0.1",
+        "2.1.0"
+      ],
       "InboxOn": {}
     },
     "Microsoft.Windows.Compatibility.Shims": {
+      "StableVersions": [
+        "2.0.0",
+        "2.0.1"
+      ],
       "InboxOn": {}
     },
     "Microsoft.XmlSerializer.Generator": {
+      "StableVersions": [
+        "1.0.0",
+        "2.0.0"
+      ],
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "1.0.0.0": "1.0.0",
-        "1.0.1.0": "1.1.0"
+        "1.0.1.0": "1.1.0",
+        "2.0.0.0": "2.0.0"
       }
     },
     "Microsoft.Xna.Framework": {
@@ -347,7 +429,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "win8": "4.0.0.0",
         "wp8": "2.0.5.0",
         "wpa81": "4.0.0.0",
@@ -365,9 +447,12 @@
     "netstandard": {
       "InboxOn": {
         "netcoreapp2.0": "2.0.0.0",
+        "netcoreapp3.0": "2.1.0.0",
         "net461": "2.0.0.0",
         "netstandard2.0": "2.0.0.0",
-        "uap10.0.15138": "2.0.1.0"
+        "netstandard2.1": "2.1.0.0",
+        "uap10.0.16299": "2.0.0.0",
+        "uap10.0.16300": "2.1.0.0"
       }
     },
     "NETStandard.Library": {
@@ -432,9 +517,14 @@
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
+      "InboxOn": {}
+    },
+    "runtime.native.System.IO.Ports": {
+      "BaselineVersion": "4.6.0",
       "InboxOn": {}
     },
     "runtime.win7-x64.runtime.native.System.Data.SqlClient.sni": {
@@ -481,7 +571,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "win8": "4.0.0.0",
         "wp8": "2.0.5.0",
         "wpa81": "4.0.0.0",
@@ -540,7 +630,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -556,13 +646,16 @@
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.5.0",
       "InboxOn": {
         "netcoreapp2.0": "4.0.2.0",
         "netcoreapp2.1": "4.0.3.0",
-        "uap10.0.15138": "4.0.3.0"
+        "netcoreapp3.0": "4.0.4.0",
+        "uap10.0.16299": "4.0.3.0",
+        "uap10.0.16300": "4.0.4.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
@@ -573,13 +666,15 @@
     },
     "System.CodeDom": {
       "StableVersions": [
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.4.0",
-        "4.0.1.0": "4.5.0"
+        "4.0.1.0": "4.5.0",
+        "4.0.2.0": "4.6.0"
       }
     },
     "System.Collections": {
@@ -609,7 +704,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -645,7 +740,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.14.0",
+        "uap10.0.16299": "4.0.14.0",
         "win8": "4.0.0.0",
         "wpa81": "4.0.0.0",
         "xamarinios10": "Any",
@@ -666,13 +761,16 @@
         "1.2.0",
         "1.1.36",
         "1.3.0",
-        "1.4.0"
+        "1.4.0",
+        "1.5.0"
       ],
-      "BaselineVersion": "1.4.0",
+      "BaselineVersion": "1.6.0",
       "InboxOn": {
         "netcoreapp2.0": "1.2.2.0",
         "netcoreapp2.1": "1.2.3.0",
-        "uap10.0.15138": "1.2.3.0"
+        "netcoreapp3.0": "1.2.4.0",
+        "uap10.0.16299": "1.2.3.0",
+        "uap10.0.16300": "1.2.4.0"
       },
       "AssemblyVersionInPackageVersion": {
         "1.1.36.0": "1.1.36",
@@ -680,7 +778,8 @@
         "1.2.0.0": "1.2.0",
         "1.2.1.0": "1.3.0",
         "1.2.2.0": "1.4.0",
-        "1.2.3.0": "1.5.0"
+        "1.2.3.0": "1.5.0",
+        "1.2.4.0": "1.6.0"
       }
     },
     "System.Collections.NonGeneric": {
@@ -697,7 +796,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -723,7 +822,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -759,7 +858,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.3.0",
+        "uap10.0.16299": "4.0.3.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -780,19 +879,22 @@
         "4.0.10",
         "4.1.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "netcoreapp2.0": "4.2.0.0",
         "netcoreapp2.1": "4.2.1.0",
+        "netcoreapp3.0": "4.2.2.0",
         "net45": "4.0.0.0",
         "net46": "4.0.10.0",
         "portable46-net451+win81": "4.0.0.0",
         "portable45-net45+win8": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
+        "uap10.0.16300": "4.2.2.0",
         "win8": "4.0.0.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
@@ -805,14 +907,20 @@
         "4.1.0.0": "4.1.0",
         "4.1.1.0": "4.3.0",
         "4.2.0.0": "4.4.0",
-        "4.2.1.0": "4.5.0"
+        "4.2.1.0": "4.5.0",
+        "4.2.2.0": "4.6.0"
       }
     },
     "System.ComponentModel.Composition": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "net45": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
+        "uap10.0.16299": "4.0.0.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -825,6 +933,9 @@
     "System.ComponentModel.Composition.Registration": {
       "InboxOn": {
         "net45": "4.0.0.0"
+      },
+      "AssemblyVersionInPackageVersion": {
+        "4.0.0.0": "4.6.0"
       }
     },
     "System.ComponentModel.DataAnnotations": {
@@ -835,7 +946,7 @@
         "portable45-net45+win8": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "win8": "4.0.0.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
@@ -870,7 +981,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -900,7 +1011,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -926,7 +1037,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -941,92 +1052,105 @@
     "System.Composition": {
       "StableVersions": [
         "1.0.31",
-        "1.1.0"
+        "1.1.0",
+        "1.2.0"
       ],
-      "BaselineVersion": "1.1.0",
+      "BaselineVersion": "1.3.0",
       "InboxOn": {}
     },
     "System.Composition.AttributedModel": {
       "StableVersions": [
         "1.0.31",
-        "1.1.0"
+        "1.1.0",
+        "1.2.0"
       ],
-      "BaselineVersion": "1.1.0",
+      "BaselineVersion": "1.3.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "1.0.31.0": "1.0.31",
         "1.0.32.0": "1.1.0",
-        "1.0.33.0": "1.2.0"
+        "1.0.33.0": "1.2.0",
+        "1.0.34.0": "1.3.0"
       }
     },
     "System.Composition.Convention": {
       "StableVersions": [
         "1.0.31",
-        "1.1.0"
+        "1.1.0",
+        "1.2.0"
       ],
-      "BaselineVersion": "1.1.0",
+      "BaselineVersion": "1.3.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "1.0.31.0": "1.0.31",
         "1.0.32.0": "1.1.0",
-        "1.0.33.0": "1.2.0"
+        "1.0.33.0": "1.2.0",
+        "1.0.34.0": "1.3.0"
       }
     },
     "System.Composition.Hosting": {
       "StableVersions": [
         "1.0.31",
-        "1.1.0"
+        "1.1.0",
+        "1.2.0"
       ],
-      "BaselineVersion": "1.1.0",
+      "BaselineVersion": "1.3.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "1.0.31.0": "1.0.31",
         "1.0.32.0": "1.1.0",
-        "1.0.33.0": "1.2.0"
+        "1.0.33.0": "1.2.0",
+        "1.0.34.0": "1.3.0"
       }
     },
     "System.Composition.Runtime": {
       "StableVersions": [
         "1.0.31",
-        "1.1.0"
+        "1.1.0",
+        "1.2.0"
       ],
-      "BaselineVersion": "1.1.0",
+      "BaselineVersion": "1.3.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "1.0.31.0": "1.0.31",
         "1.0.32.0": "1.1.0",
-        "1.0.33.0": "1.2.0"
+        "1.0.33.0": "1.2.0",
+        "1.0.34.0": "1.3.0"
       }
     },
     "System.Composition.TypedParts": {
       "StableVersions": [
         "1.0.31",
-        "1.1.0"
+        "1.1.0",
+        "1.2.0"
       ],
-      "BaselineVersion": "1.1.0",
+      "BaselineVersion": "1.3.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "1.0.31.0": "1.0.31",
         "1.0.32.0": "1.1.0",
-        "1.0.33.0": "1.2.0"
+        "1.0.33.0": "1.2.0",
+        "1.0.34.0": "1.3.0"
       }
     },
     "System.Configuration": {
       "InboxOn": {
         "netcoreapp2.0": "4.0.0.0",
         "net45": "4.0.0.0",
-        "uap10.0.15138": "4.0.0.0"
+        "uap10.0.16299": "4.0.0.0"
       }
     },
     "System.Configuration.ConfigurationManager": {
       "StableVersions": [
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.4.0",
-        "4.0.1.0": "4.5.0"
+        "4.0.1.0": "4.5.0",
+        "4.0.2.0": "4.6.0"
       }
     },
     "System.Configuration.Install": {
@@ -1047,7 +1171,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1076,7 +1200,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "win8": "4.0.0.0",
         "wp8": "2.0.5.0",
         "wpa81": "4.0.0.0",
@@ -1093,7 +1217,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1114,7 +1238,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1127,8 +1251,14 @@
       }
     },
     "System.Data.DataSetExtensions": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.5.0",
       "InboxOn": {
-        "net45": "4.0.0.0"
+        "netcoreapp3.0": "4.0.0.0",
+        "net45": "4.0.0.0",
+        "uap10.0.16300": "4.0.0.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.5.0"
@@ -1151,9 +1281,20 @@
       }
     },
     "System.Data.Odbc": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
-        "4.0.0.0": "4.5.0"
+        "4.0.0.0": "4.5.0",
+        "4.0.1.0": "4.6.0"
+      }
+    },
+    "System.Data.OleDb": {
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "4.0.0.0": "4.6.0"
       }
     },
     "System.Data.OracleClient": {
@@ -1186,14 +1327,19 @@
       "StableVersions": [
         "4.1.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.1",
+        "4.5.0",
+        "4.6.0",
+        "4.6.1"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.7.0",
       "InboxOn": {
         "net461": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.3.1.0",
+        "uap10.0.16299": "4.3.0.0",
+        "uap10.0.16300": "4.6.0.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1204,7 +1350,10 @@
         "4.1.0.0": "4.1.0",
         "4.1.1.0": "4.3.0",
         "4.2.0.0": "4.4.0",
-        "4.3.1.0": "4.5.0"
+        "4.4.0.0": "4.5.0",
+        "4.5.0.0": "4.6.0",
+        "4.5.0.1": "4.6.1",
+        "4.6.0.0": "4.7.0"
       }
     },
     "System.Data.SqlXml": {
@@ -1252,7 +1401,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.3.0",
+        "uap10.0.16299": "4.0.3.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -1294,7 +1443,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -1314,25 +1463,35 @@
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.1"
+        "4.4.1",
+        "4.5.0",
+        "4.5.1"
       ],
-      "BaselineVersion": "4.4.1",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "netcoreapp2.0": "4.0.2.1",
-        "netcoreapp2.1": "4.0.3.0"
+        "netcoreapp2.1": "4.0.3.1",
+        "netcoreapp3.0": "4.0.4.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.0.2.0": "4.4.0",
         "4.0.2.1": "4.4.1",
-        "4.0.3.0": "4.5.0"
+        "4.0.3.0": "4.5.0",
+        "4.0.3.1": "4.5.1",
+        "4.0.4.0": "4.6.0"
       }
     },
     "System.Diagnostics.EventLog": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
-        "4.0.0.0": "4.5.0"
+        "4.0.0.0": "4.5.0",
+        "4.0.1.0": "4.6.0"
       }
     },
     "System.Diagnostics.FileVersionInfo": {
@@ -1348,7 +1507,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.3.0",
+        "uap10.0.16299": "4.0.3.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1360,6 +1519,10 @@
       }
     },
     "System.Diagnostics.PerformanceCounter": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "monoandroid10": "Any",
         "monotouch10": "Any",
@@ -1369,7 +1532,8 @@
         "xamarinwatchos10": "Any"
       },
       "AssemblyVersionInPackageVersion": {
-        "4.0.0.0": "4.5.0"
+        "4.0.0.0": "4.5.0",
+        "4.0.1.0": "4.6.0"
       }
     },
     "System.Diagnostics.Process": {
@@ -1385,7 +1549,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1412,7 +1576,7 @@
         "netstandard2.0": "4.0.2.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1438,7 +1602,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1474,7 +1638,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -1512,7 +1676,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1547,7 +1711,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "win81": "4.0.10.0",
         "wpa81": "4.0.10.0",
@@ -1565,6 +1729,10 @@
       }
     },
     "System.DirectoryServices": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "net45": "4.0.0.0"
       },
@@ -1573,6 +1741,10 @@
       }
     },
     "System.DirectoryServices.AccountManagement": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "net45": "4.0.0.0"
       },
@@ -1581,6 +1753,10 @@
       }
     },
     "System.DirectoryServices.Protocols": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "net45": "4.0.0.0"
       },
@@ -1593,10 +1769,15 @@
         "netcoreapp2.0": "4.0.0.0",
         "net45": "4.0.0.0",
         "netstandard2.0": "4.0.0.0",
-        "uap10.0.15138": "4.0.0.0"
+        "uap10.0.16299": "4.0.0.0"
       }
     },
     "System.Drawing.Common": {
+      "StableVersions": [
+        "4.5.0",
+        "4.5.1"
+      ],
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "monoandroid10": "Any",
         "monotouch10": "Any",
@@ -1606,7 +1787,9 @@
         "xamarinwatchos10": "Any"
       },
       "AssemblyVersionInPackageVersion": {
-        "4.0.0.0": "4.5.0"
+        "4.0.0.0": "4.5.0",
+        "4.0.0.1": "4.5.1",
+        "4.0.1.0": "4.6.0"
       }
     },
     "System.Drawing.Design": {
@@ -1627,7 +1810,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.0.0",
+        "uap10.0.16299": "4.2.0.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1671,7 +1854,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -1720,7 +1903,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -1750,7 +1933,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1776,7 +1959,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1831,7 +2014,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -1868,7 +2051,7 @@
         "netstandard2.0": "4.1.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "wpa81": "4.0.0.0",
         "xamarinios10": "Any",
@@ -1883,6 +2066,15 @@
         "4.1.2.0": "4.3.0"
       }
     },
+    "System.IO.Compression.Brotli": {
+      "InboxOn": {
+        "netcoreapp2.1": "4.2.1.0"
+      },
+      "AssemblyVersionInPackageVersion": {
+        "4.2.0.0": "4.4.0",
+        "4.2.1.0": "4.5.0"
+      }
+    },
     "System.IO.Compression.FileSystem": {
       "InboxOn": {
         "netcoreapp2.0": "4.0.0.0",
@@ -1890,7 +2082,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1911,7 +2103,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.4.0",
+        "uap10.0.16299": "4.0.4.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1937,7 +2129,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -1953,15 +2145,17 @@
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.0.2.0": "4.4.0",
-        "4.0.3.0": "4.5.0"
+        "4.0.3.0": "4.5.0",
+        "4.0.4.0": "4.6.0"
       }
     },
     "System.IO.FileSystem.DriveInfo": {
@@ -1977,7 +2171,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2002,7 +2196,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2027,7 +2221,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2052,7 +2246,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2082,7 +2276,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2097,15 +2291,32 @@
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.0.2.0": "4.4.0",
-        "4.0.3.0": "4.5.0"
+        "4.0.3.0": "4.5.0",
+        "4.0.4.0": "4.6.0"
+      }
+    },
+    "System.IO.Pipelines": {
+      "StableVersions": [
+        "4.5.0",
+        "4.5.1",
+        "4.5.2",
+        "4.5.3"
+      ],
+      "BaselineVersion": "4.6.0",
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "4.0.0.0": "4.5.0",
+        "4.0.0.1": "4.5.2",
+        "4.0.1.0": "4.6.0"
       }
     },
     "System.IO.Pipes": {
@@ -2119,7 +2330,7 @@
         "netcoreapp2.1": "4.1.1.0",
         "net461": "4.0.0.0",
         "netstandard2.0": "4.0.0.0",
-        "uap10.0.15138": "4.1.1.0"
+        "uap10.0.16299": "4.1.1.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
@@ -2129,10 +2340,14 @@
     "System.IO.Pipes.AccessControl": {
       "StableVersions": [
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0",
+        "4.5.1"
       ],
-      "BaselineVersion": "4.4.0",
-      "InboxOn": {},
+      "BaselineVersion": "4.5.1",
+      "InboxOn": {
+        "uap10.0.16300": "4.0.4.0"
+      },
       "AssemblyVersionInPackageVersion": {
         "4.0.1.0": "4.3.0",
         "4.0.2.0": "4.4.0",
@@ -2141,15 +2356,18 @@
     },
     "System.IO.Ports": {
       "StableVersions": [
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
-        "uap10.0.15138": "4.0.1.0"
+        "uap10.0.16299": "4.0.1.0",
+        "uap10.0.16300": "4.0.2.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.4.0",
-        "4.0.1.0": "4.5.0"
+        "4.0.1.0": "4.5.0",
+        "4.0.2.0": "4.6.0"
       }
     },
     "System.IO.UnmanagedMemoryStream": {
@@ -2166,7 +2384,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2180,9 +2398,10 @@
     },
     "System.Json": {
       "StableVersions": [
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "monoandroid10": "Any",
         "monotouch10": "Any",
@@ -2193,7 +2412,8 @@
       },
       "AssemblyVersionInPackageVersion": {
         "2.0.5.0": "4.4.0",
-        "2.0.6.0": "4.5.0"
+        "2.0.6.0": "4.5.0",
+        "2.0.7.0": "4.6.0"
       }
     },
     "System.Linq": {
@@ -2222,7 +2442,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -2265,7 +2485,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -2299,7 +2519,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.3.0",
+        "uap10.0.16299": "4.0.3.0",
         "win8": "4.0.0.0",
         "wpa81": "4.0.0.0",
         "xamarinios10": "Any",
@@ -2319,7 +2539,7 @@
         "4.0.1",
         "4.3.0"
       ],
-      "BaselineVersion": "4.3.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "netcoreapp2.0": "4.0.3.0",
         "net45": "4.0.0.0",
@@ -2337,7 +2557,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.3.0",
+        "uap10.0.16299": "4.0.3.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -2353,6 +2573,10 @@
       }
     },
     "System.Management": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "net45": "4.0.0.0"
       },
@@ -2366,13 +2590,29 @@
       }
     },
     "System.Memory": {
+      "StableVersions": [
+        "4.5.0",
+        "4.5.1",
+        "4.5.2",
+        "4.5.3"
+      ],
+      "BaselineVersion": "4.5.3",
       "InboxOn": {
-        "netcoreapp2.1": "4.0.1.0",
-        "uap10.0.15138": "4.0.1.0"
+        "netcoreapp2.1": "4.1.0.0",
+        "netcoreapp3.0": "4.2.0.0",
+        "monoandroid10": "Any",
+        "monotouch10": "Any",
+        "uap10.0.16300": "4.2.0.0",
+        "xamarinios10": "Any",
+        "xamarinmac20": "Any",
+        "xamarintvos10": "Any",
+        "xamarinwatchos10": "Any"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.4.0",
-        "4.0.1.0": "4.5.0"
+        "4.0.1.0": "4.5.0",
+        "4.0.1.1": "4.5.3",
+        "4.1.0.0": "4.6.0"
       }
     },
     "System.Messaging": {
@@ -2397,7 +2637,7 @@
         "portable46-wp81+wpa81": "3.9.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "win8": "4.0.0.0",
         "wp8": "3.9.0.0",
         "wpa81": "4.0.0.0",
@@ -2448,7 +2688,7 @@
         "netstandard2.0": "4.1.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "wpa81": "4.0.0.0",
         "xamarinios10": "Any",
@@ -2471,7 +2711,7 @@
       ],
       "BaselineVersion": "4.3.0",
       "InboxOn": {
-        "uap10.0.15138": "4.0.4.0",
+        "uap10.0.16299": "4.0.4.0",
         "win8": "4.0.0.0"
       },
       "AssemblyVersionInPackageVersion": {
@@ -2502,15 +2742,25 @@
         "4.0.0",
         "4.0.1",
         "4.3.0",
-        "4.4.0"
+        "4.3.3",
+        "4.4.0",
+        "4.5.0",
+        "4.5.1",
+        "4.5.2",
+        "4.5.3",
+        "4.5.4"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
+        "4.0.1.3": "4.3.3",
         "4.0.2.0": "4.4.0",
-        "4.0.3.0": "4.5.0"
+        "4.0.3.0": "4.5.0",
+        "4.0.3.1": "4.5.1",
+        "4.0.3.2": "4.5.3",
+        "4.0.4.0": "4.6.0"
       }
     },
     "System.Net.HttpListener": {
@@ -2519,7 +2769,7 @@
         "netcoreapp2.1": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.1.0",
+        "uap10.0.16299": "4.0.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2532,7 +2782,7 @@
         "netcoreapp2.1": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.1.0",
+        "uap10.0.16299": "4.0.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2552,7 +2802,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2590,7 +2840,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -2618,7 +2868,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2657,7 +2907,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "3.9.0.0",
         "wpa81": "4.0.0.0",
@@ -2702,7 +2952,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "3.9.0.0",
         "wpa81": "4.0.0.0",
@@ -2732,7 +2982,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2749,7 +2999,7 @@
         "netcoreapp2.1": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.1.0",
+        "uap10.0.16299": "4.0.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2770,7 +3020,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2797,7 +3047,7 @@
       "InboxOn": {
         "netcoreapp2.0": "4.0.0.0",
         "netcoreapp2.1": "4.0.1.0",
-        "uap10.0.15138": "4.0.1.0"
+        "uap10.0.16299": "4.0.1.0"
       }
     },
     "System.Net.WebHeaderCollection": {
@@ -2814,7 +3064,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2830,7 +3080,7 @@
       "InboxOn": {
         "netcoreapp2.0": "4.0.0.0",
         "netcoreapp2.1": "4.0.1.0",
-        "uap10.0.15138": "4.0.1.0"
+        "uap10.0.16299": "4.0.1.0"
       }
     },
     "System.Net.WebSockets": {
@@ -2846,7 +3096,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2870,7 +3120,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2879,6 +3129,22 @@
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0"
+      }
+    },
+    "System.Net.WebSockets.WebSocketProtocol": {
+      "StableVersions": [
+        "4.5.1",
+        "4.5.0",
+        "4.5.2",
+        "4.5.3"
+      ],
+      "BaselineVersion": "4.6.0",
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "4.0.0.0": "4.5.0",
+        "4.0.0.1": "4.5.2",
+        "4.0.0.2": "4.5.3",
+        "4.0.1.0": "4.6.0"
       }
     },
     "System.Numerics": {
@@ -2893,7 +3159,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "win8": "4.0.0.0",
         "wpa81": "4.0.0.0",
         "xamarinios10": "Any",
@@ -2902,23 +3168,37 @@
         "xamarinwatchos10": "Any"
       }
     },
+    "System.Numerics.Tensors": {
+      "StableVersions": [
+        "0.1.0"
+      ],
+      "BaselineVersion": "0.2.0",
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "0.1.0.0": "0.1.0",
+        "0.2.0.0": "0.2.0"
+      }
+    },
     "System.Numerics.Vectors": {
       "StableVersions": [
         "4.0.0",
         "4.1.0",
         "4.1.1",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.5.0",
       "InboxOn": {
         "netcoreapp2.0": "4.1.3.0",
         "netcoreapp2.1": "4.1.4.0",
+        "netcoreapp3.0": "4.1.5.0",
         "net46": "4.0.0.0",
         "net461": "4.1.2.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.4.0",
+        "uap10.0.16299": "4.1.4.0",
+        "uap10.0.16300": "4.1.5.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -2939,9 +3219,9 @@
         "4.0.0",
         "4.3.0"
       ],
-      "BaselineVersion": "4.3.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
-        "uap10.0.15138": "4.0.4.0"
+        "uap10.0.16299": "4.0.4.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
@@ -2977,7 +3257,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -3057,7 +3337,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -3079,19 +3359,19 @@
         "4.0.0",
         "4.3.0"
       ],
-      "BaselineVersion": "4.3.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "net45": "4.0.0.0",
         "portable46-net451+win81": "4.0.0.0",
         "portable45-net45+win8": "4.0.0.0",
-        "uap10.0.15138": "4.0.3.0",
+        "uap10.0.16299": "4.0.3.0",
         "win8": "4.0.0.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.0.1",
         "4.0.2.0": "4.3.0",
-        "4.0.3.0": "4.4.0"
+        "4.0.3.0": "4.6.0"
       }
     },
     "System.Reflection.DispatchProxy": {
@@ -3099,15 +3379,19 @@
         "4.0.0",
         "4.0.1",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.1",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "netcoreapp2.0": "4.0.3.0",
         "netcoreapp2.1": "4.0.4.0",
+        "netcoreapp3.0": "4.0.5.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.4.0",
+        "uap10.0.16299": "4.0.4.0",
+        "uap10.0.16300": "4.0.5.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -3118,7 +3402,8 @@
         "4.0.1.0": "4.0.1",
         "4.0.2.0": "4.3.0",
         "4.0.3.0": "4.4.0",
-        "4.0.4.0": "4.5.0"
+        "4.0.4.0": "4.5.0",
+        "4.0.5.0": "4.6.0"
       }
     },
     "System.Reflection.Emit": {
@@ -3127,11 +3412,13 @@
         "4.0.1",
         "4.3.0"
       ],
-      "BaselineVersion": "4.3.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "netcoreapp2.0": "4.1.0.0",
+        "netcoreapp3.0": "4.1.1.0",
         "netcoreapp2.1": "4.1.1.0",
         "net45": "4.0.0.0",
+        "netstandard2.1": "4.0.0.0",
         "monoandroid10": "Any",
         "xamarinmac20": "Any"
       },
@@ -3151,8 +3438,10 @@
       "BaselineVersion": "4.3.0",
       "InboxOn": {
         "netcoreapp2.0": "4.0.3.0",
+        "netcoreapp3.0": "4.1.0.0",
         "net45": "4.0.0.0",
         "portable45-net45+wp8": "4.0.0.0",
+        "netstandard2.1": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
         "wp8": "4.0.0.0",
@@ -3176,8 +3465,10 @@
       "BaselineVersion": "4.3.0",
       "InboxOn": {
         "netcoreapp2.0": "4.0.3.0",
+        "netcoreapp3.0": "4.1.0.0",
         "net45": "4.0.0.0",
         "portable45-net45+wp8": "4.0.0.0",
+        "netstandard2.1": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
         "wp8": "4.0.0.0",
@@ -3217,7 +3508,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -3239,13 +3530,16 @@
         "1.1.0",
         "1.2.0",
         "1.4.1",
-        "1.5.0"
+        "1.5.0",
+        "1.6.0"
       ],
-      "BaselineVersion": "1.5.0",
+      "BaselineVersion": "1.7.0",
       "InboxOn": {
         "netcoreapp2.0": "1.4.2.0",
         "netcoreapp2.1": "1.4.3.0",
-        "uap10.0.15138": "1.4.3.0"
+        "netcoreapp3.0": "1.4.4.0",
+        "uap10.0.16299": "1.4.3.0",
+        "uap10.0.16300": "1.4.4.0"
       },
       "AssemblyVersionInPackageVersion": {
         "1.0.22.0": "1.0.22",
@@ -3254,7 +3548,14 @@
         "1.3.0.0": "1.3.0",
         "1.4.1.0": "1.4.1",
         "1.4.2.0": "1.5.0",
-        "1.4.3.0": "1.6.0"
+        "1.4.3.0": "1.6.0",
+        "1.4.4.0": "1.7.0"
+      }
+    },
+    "System.Reflection.MetadataLoadContext": {
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "4.0.0.0": "4.6.0"
       }
     },
     "System.Reflection.Primitives": {
@@ -3282,7 +3583,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -3302,15 +3603,19 @@
         "4.0.0",
         "4.1.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0",
+        "4.5.1"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "netcoreapp2.0": "4.1.2.0",
         "netcoreapp2.1": "4.1.3.0",
+        "netcoreapp3.0": "4.1.4.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.3.0",
+        "uap10.0.16299": "4.1.3.0",
+        "uap10.0.16300": "4.1.4.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -3321,7 +3626,14 @@
         "4.1.0.0": "4.1.0",
         "4.1.1.0": "4.3.0",
         "4.1.2.0": "4.4.0",
-        "4.1.3.0": "4.5.0"
+        "4.1.3.0": "4.5.0",
+        "4.1.4.0": "4.6.0"
+      }
+    },
+    "System.Resources.Extensions": {
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "4.0.0.0": "4.6.0"
       }
     },
     "System.Resources.Reader": {
@@ -3335,7 +3647,7 @@
         "netcoreapp2.1": "4.1.1.0",
         "net461": "4.0.1.0",
         "netstandard2.0": "4.0.1.0",
-        "uap10.0.15138": "4.1.1.0"
+        "uap10.0.16299": "4.1.1.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
@@ -3377,7 +3689,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -3403,7 +3715,7 @@
         "netcoreapp2.1": "4.1.1.0",
         "net461": "4.0.1.0",
         "netstandard2.0": "4.0.1.0",
-        "uap10.0.15138": "4.1.1.0"
+        "uap10.0.16299": "4.1.1.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
@@ -3440,7 +3752,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "win81": "4.0.10.0",
         "wp8": "4.0.0.0",
@@ -3459,6 +3771,10 @@
       }
     },
     "System.Runtime.Caching": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "net45": "4.0.0.0",
         "monoandroid10": "Any",
@@ -3474,20 +3790,21 @@
     },
     "System.Runtime.CompilerServices.Unsafe": {
       "StableVersions": [
-        "4.0.0",
-        "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0",
+        "4.5.1",
+        "4.5.2"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
-        "netcoreapp2.1": "4.0.4.0",
-        "uap10.0.15138": "4.0.4.0"
+        "netcoreapp3.0": "4.0.5.0",
+        "uap10.0.16300": "4.0.5.0"
       },
       "AssemblyVersionInPackageVersion": {
-        "4.0.0.0": "4.0.0",
-        "4.0.2.0": "4.3.0",
         "4.0.3.0": "4.4.0",
-        "4.0.4.0": "4.5.0"
+        "4.0.4.0": "4.5.0",
+        "4.0.4.1": "4.5.2",
+        "4.0.5.0": "4.6.0"
       }
     },
     "System.Runtime.CompilerServices.VisualC": {
@@ -3503,7 +3820,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -3547,7 +3864,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -3577,7 +3894,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -3613,7 +3930,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "win81": "4.0.10.0",
         "wpa81": "4.0.10.0",
@@ -3641,7 +3958,7 @@
         "netcoreapp2.1": "4.0.3.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.3.0",
+        "uap10.0.16299": "4.0.3.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -3659,7 +3976,7 @@
         "4.0.1",
         "4.3.0"
       ],
-      "BaselineVersion": "4.3.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "netcoreapp2.0": "4.0.3.0",
         "net45": "4.0.0.0",
@@ -3676,7 +3993,7 @@
         "portable46-wp81+wpa81": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.3.0",
+        "uap10.0.16299": "4.0.3.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -3691,12 +4008,15 @@
         "4.0.2.0": "4.3.0"
       }
     },
-    "System.Runtime.Intrinsics.X86": {
+    "System.Runtime.Intrinsics": {
       "InboxOn": {
-        "netcoreapp2.1": "4.0.0.0"
-      },
+        "netcoreapp3.0": "4.0.0.0"
+      }
+    },
+    "System.Runtime.Intrinsics.Experimental": {
+      "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
-        "4.0.0.0": "4.5.0"
+        "4.0.0.0": "4.6.0"
       }
     },
     "System.Runtime.Loader": {
@@ -3707,11 +4027,13 @@
       "BaselineVersion": "4.3.0",
       "InboxOn": {
         "netcoreapp2.0": "4.0.2.0",
-        "netcoreapp2.1": "4.0.3.0"
+        "netcoreapp2.1": "4.0.3.0",
+        "netcoreapp3.0": "4.1.0.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
-        "4.0.1.0": "4.3.0"
+        "4.0.1.0": "4.3.0",
+        "4.1.0.0": "4.6.0"
       }
     },
     "System.Runtime.Numerics": {
@@ -3733,7 +4055,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wpa81": "4.0.0.0",
         "xamarinios10": "Any",
@@ -3770,7 +4092,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "win8": "4.0.0.0",
         "wp8": "2.0.5.0",
         "wpa81": "4.0.0.0",
@@ -3792,7 +4114,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.3.0",
+        "uap10.0.16299": "4.0.3.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -3832,7 +4154,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.4.0",
+        "uap10.0.16299": "4.0.4.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -3877,7 +4199,7 @@
         "netstandard2.0": "4.1.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -3923,7 +4245,7 @@
         "netstandard2.0": "4.1.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.4.0",
+        "uap10.0.16299": "4.1.4.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -3947,13 +4269,15 @@
         "4.0.11",
         "4.3.0"
       ],
-      "BaselineVersion": "4.3.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
+        "net45": "4.0.0.0",
+        "net451": "4.0.10.0",
         "portable46-win81+wp81+wpa81": "4.0.0.0",
         "portable46-win81+wp81": "4.0.0.0",
         "portable46-win81+wpa81": "4.0.10.0",
         "portable46-wp81+wpa81": "4.0.0.0",
-        "uap10.0.15138": "4.0.14.0",
+        "uap10.0.16299": "4.0.14.0",
         "win8": "4.0.0.0",
         "win81": "4.0.10.0",
         "wp8": "4.0.0.0",
@@ -3964,7 +4288,8 @@
         "4.0.10.0": "4.0.10",
         "4.0.11.0": "4.0.11",
         "4.0.12.0": "4.3.0",
-        "4.0.13.0": "4.4.0"
+        "4.0.13.0": "4.4.0",
+        "4.0.14.0": "4.6.0"
       }
     },
     "System.Runtime.WindowsRuntime.UI.Xaml": {
@@ -3973,10 +4298,11 @@
         "4.0.0",
         "4.3.0"
       ],
-      "BaselineVersion": "4.3.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
+        "net45": "4.0.0.0",
         "portable46-win81+wpa81": "4.0.0.0",
-        "uap10.0.15138": "4.0.4.0",
+        "uap10.0.16299": "4.0.4.0",
         "win8": "4.0.0.0",
         "wpa81": "4.0.0.0"
       },
@@ -3984,31 +4310,34 @@
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.0.1",
         "4.0.2.0": "4.3.0",
-        "4.0.3.0": "4.4.0"
+        "4.0.3.0": "4.4.0",
+        "4.0.4.0": "4.6.0"
       }
     },
     "System.Security": {
       "InboxOn": {
         "netcoreapp2.0": "4.0.0.0",
         "net45": "4.0.0.0",
-        "uap10.0.15138": "4.0.0.0"
+        "uap10.0.16299": "4.0.0.0"
       }
     },
     "System.Security.AccessControl": {
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
-        "uap10.0.15138": "4.1.1.0"
+        "uap10.0.16299": "4.1.1.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.1.0.0": "4.4.0",
-        "4.1.1.0": "4.5.0"
+        "4.1.1.0": "4.5.0",
+        "4.1.2.0": "4.6.0"
       }
     },
     "System.Security.Claims": {
@@ -4025,7 +4354,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -4050,7 +4379,7 @@
         "netstandard2.0": "4.2.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.3.1.0",
+        "uap10.0.16299": "4.3.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -4067,11 +4396,19 @@
       "StableVersions": [
         "4.2.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
-        "uap10.0.15138": "4.3.1.0"
+        "monoandroid10": "Any",
+        "monotouch10": "Any",
+        "uap10.0.16299": "4.3.1.0",
+        "uap10.0.16300": "4.3.2.0",
+        "xamarinios10": "Any",
+        "xamarinmac20": "Any",
+        "xamarintvos10": "Any",
+        "xamarinwatchos10": "Any"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.2.0",
@@ -4079,7 +4416,8 @@
         "4.2.0.0": "4.2.0",
         "4.2.1.0": "4.3.0",
         "4.3.0.0": "4.4.0",
-        "4.3.1.0": "4.5.0"
+        "4.3.1.0": "4.5.0",
+        "4.3.2.0": "4.6.0"
       }
     },
     "System.Security.Cryptography.Csp": {
@@ -4095,7 +4433,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -4119,7 +4457,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -4134,30 +4472,41 @@
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0",
+        "4.5.1"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.1.0.0": "4.4.0",
-        "4.1.1.0": "4.5.0"
+        "4.1.1.0": "4.5.0",
+        "4.1.1.1": "4.5.1",
+        "4.1.2.0": "4.6.0"
       }
     },
     "System.Security.Cryptography.Pkcs": {
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0",
+        "4.5.1",
+        "4.5.2"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.0.2.0": "4.4.0",
-        "4.0.3.0": "4.5.0"
+        "4.0.3.0": "4.5.0",
+        "4.0.3.1": "4.5.1",
+        "4.0.3.2": "4.5.2",
+        "4.0.4.0": "4.6.0",
+        "4.1.0.0": "4.6.0"
       }
     },
     "System.Security.Cryptography.Primitives": {
@@ -4173,7 +4522,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -4188,9 +4537,10 @@
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "monoandroid10": "Any",
         "monotouch10": "Any",
@@ -4203,7 +4553,8 @@
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.0.2.0": "4.4.0",
-        "4.0.3.0": "4.5.0"
+        "4.0.3.0": "4.5.0",
+        "4.0.4.0": "4.6.0"
       }
     },
     "System.Security.Cryptography.X509Certificates": {
@@ -4219,7 +4570,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -4233,24 +4584,28 @@
     },
     "System.Security.Cryptography.Xml": {
       "StableVersions": [
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.4.0",
-        "4.0.1.0": "4.5.0"
+        "4.0.1.0": "4.5.0",
+        "4.0.2.0": "4.6.0"
       }
     },
     "System.Security.Permissions": {
       "StableVersions": [
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.4.0",
-        "4.0.1.0": "4.5.0"
+        "4.0.1.0": "4.5.0",
+        "4.0.2.0": "4.6.0"
       }
     },
     "System.Security.Principal": {
@@ -4278,7 +4633,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -4297,17 +4652,21 @@
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0",
+        "4.5.1"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
-        "uap10.0.15138": "4.1.1.0"
+        "uap10.0.16299": "4.1.1.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.1.0.0": "4.4.0",
-        "4.1.1.0": "4.5.0"
+        "4.1.1.0": "4.5.0",
+        "4.1.1.1": "4.5.1",
+        "4.1.2.0": "4.6.0"
       }
     },
     "System.Security.SecureString": {
@@ -4323,7 +4682,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -4471,9 +4830,14 @@
       }
     },
     "System.ServiceModel.Syndication": {
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
-        "4.0.0.0": "4.5.0"
+        "4.0.0.0": "4.5.0",
+        "4.0.1.0": "4.6.0"
       }
     },
     "System.ServiceModel.Web": {
@@ -4493,7 +4857,7 @@
         "portable46-wp81+wpa81": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16300": "4.0.0.0",
         "win8": "4.0.0.0",
         "wp8": "2.0.5.0",
         "wpa81": "4.0.0.0",
@@ -4507,22 +4871,24 @@
       "InboxOn": {
         "netcoreapp2.0": "4.0.0.0",
         "net45": "4.0.0.0",
-        "uap10.0.15138": "4.0.0.0"
+        "uap10.0.16299": "4.0.0.0"
       }
     },
     "System.ServiceProcess.ServiceController": {
       "StableVersions": [
         "4.1.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.1.0.0": "4.1.0",
         "4.1.1.0": "4.3.0",
         "4.2.0.0": "4.4.0",
-        "4.2.1.0": "4.5.0"
+        "4.2.1.0": "4.5.0",
+        "4.2.2.0": "4.6.0"
       }
     },
     "System.Speech": {
@@ -4557,7 +4923,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -4578,13 +4944,17 @@
         "4.0.0",
         "4.0.1",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0",
+        "4.5.1"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "netcoreapp3.0": "4.1.2.0",
+        "uap10.0.16299": "4.1.1.0",
+        "uap10.0.16300": "4.1.2.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -4595,7 +4965,8 @@
         "4.0.1.0": "4.0.1",
         "4.0.2.0": "4.3.0",
         "4.1.0.0": "4.4.0",
-        "4.1.1.0": "4.5.0"
+        "4.1.1.0": "4.5.0",
+        "4.1.2.0": "4.6.0"
       }
     },
     "System.Text.Encoding.Extensions": {
@@ -4625,7 +4996,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -4645,15 +5016,28 @@
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
-      "InboxOn": {},
+      "BaselineVersion": "4.6.0",
+      "InboxOn": {
+        "netcoreapp3.0": "4.0.4.0"
+      },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.0.2.0": "4.4.0",
-        "4.0.3.0": "4.5.0"
+        "4.0.3.0": "4.5.0",
+        "4.0.4.0": "4.6.0"
+      }
+    },
+    "System.Text.Json": {
+      "InboxOn": {
+        "netcoreapp3.0": "4.0.0.0",
+        "uap10.0.16300": "4.0.0.0"
+      },
+      "AssemblyVersionInPackageVersion": {
+        "4.0.0.0": "4.6.0"
       }
     },
     "System.Text.RegularExpressions": {
@@ -4684,7 +5068,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -4727,7 +5111,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -4747,21 +5131,30 @@
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.6.0",
       "InboxOn": {},
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.0.1.0": "4.3.0",
         "4.0.2.0": "4.4.0",
-        "4.0.3.0": "4.5.0"
+        "4.0.3.0": "4.5.0",
+        "4.0.4.0": "4.6.0"
       }
     },
     "System.Threading.Channels": {
-      "InboxOn": {},
+      "StableVersions": [
+        "4.5.0"
+      ],
+      "BaselineVersion": "4.6.0",
+        "InboxOn": {
+          "netcoreapp3.0":  "4.0.1.0"
+        },
       "AssemblyVersionInPackageVersion": {
-        "4.0.0.0": "4.5.0"
+        "4.0.0.0": "4.5.0",
+        "4.0.1.0": "4.6.0"
       }
     },
     "System.Threading.Overlapped": {
@@ -4776,7 +5169,7 @@
         "netcoreapp2.1": "4.1.1.0",
         "net461": "4.0.1.0",
         "netstandard2.0": "4.0.1.0",
-        "uap10.0.15138": "4.1.1.0"
+        "uap10.0.16299": "4.1.1.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
@@ -4811,7 +5204,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -4832,38 +5225,53 @@
         "4.6.0",
         "4.5.25",
         "4.7.0",
-        "4.8.0"
+        "4.8.0",
+        "4.9.0"
       ],
-      "BaselineVersion": "4.8.0",
+      "BaselineVersion": "4.10.0",
       "InboxOn": {
         "netcoreapp2.0": "4.6.2.0",
         "netcoreapp2.1": "4.6.3.0",
-        "uap10.0.15138": "4.6.3.0"
+        "netcoreapp3.0": "4.6.4.0",
+        "uap10.0.16299": "4.6.3.0",
+        "uap10.0.16300": "4.6.4.0"
       },
       "AssemblyVersionInPackageVersion": {
         "4.5.25.0": "4.5.25",
         "4.6.0.0": "4.6.0",
         "4.6.1.0": "4.7.0",
         "4.6.2.0": "4.8.0",
-        "4.6.3.0": "4.9.0"
+        "4.6.3.0": "4.9.0",
+        "4.6.4.0": "4.10.0"
       }
     },
     "System.Threading.Tasks.Extensions": {
       "StableVersions": [
         "4.0.0",
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.1",
+        "4.5.2",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.5.2",
       "InboxOn": {
         "netcoreapp2.0": "4.1.1.0",
-        "netcoreapp2.1": "4.1.2.0"
+        "netcoreapp2.1": "4.3.0.0",
+        "monoandroid10": "Any",
+        "monotouch10": "Any",
+        "uap10.0.16300": "4.3.0.0",
+        "xamarinios10": "Any",
+        "xamarinmac20": "Any",
+        "xamarintvos10": "Any",
+        "xamarinwatchos10": "Any"
       },
       "AssemblyVersionInPackageVersion": {
         "4.0.0.0": "4.0.0",
         "4.1.0.0": "4.3.0",
         "4.1.1.0": "4.4.0",
-        "4.1.2.0": "4.5.0"
+        "4.2.0.0": "4.5.0",
+        "4.2.1.0": "4.6.0"
       }
     },
     "System.Threading.Tasks.Parallel": {
@@ -4884,7 +5292,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.3.0",
+        "uap10.0.16299": "4.0.3.0",
         "win8": "4.0.0.0",
         "wpa81": "4.0.0.0",
         "xamarinios10": "Any",
@@ -4911,7 +5319,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -4935,7 +5343,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -4963,7 +5371,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win81": "4.0.0.0",
         "wpa81": "4.0.0.0",
         "xamarinios10": "Any",
@@ -4984,7 +5392,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -4995,22 +5403,31 @@
       "InboxOn": {
         "netcoreapp2.0": "4.0.0.0",
         "netcoreapp2.1": "4.0.1.0",
-        "uap10.0.15138": "4.0.1.0"
+        "uap10.0.16299": "4.0.1.0"
+      }
+    },
+    "System.Utf8String.Experimental": {
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "4.0.0.0": "4.6.0"
       }
     },
     "System.ValueTuple": {
       "StableVersions": [
         "4.3.0",
-        "4.4.0"
+        "4.4.0",
+        "4.5.0"
       ],
-      "BaselineVersion": "4.4.0",
+      "BaselineVersion": "4.5.0",
       "InboxOn": {
         "netcoreapp2.0": "4.0.2.0",
         "netcoreapp2.1": "4.0.3.0",
+        "netcoreapp3.0": "4.0.4.0",
         "netstandard2.0": "4.0.2.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.3.0",
+        "uap10.0.16299": "4.0.3.0",
+        "uap10.0.16300": "4.0.4.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -5019,7 +5436,8 @@
       "AssemblyVersionInPackageVersion": {
         "4.0.1.0": "4.3.0",
         "4.0.2.0": "4.4.0",
-        "4.0.3.0": "4.5.0"
+        "4.0.3.0": "4.5.0",
+        "4.0.4.0": "4.6.0"
       }
     },
     "System.Web": {
@@ -5027,7 +5445,7 @@
         "netcoreapp2.0": "4.0.0.0",
         "net45": "4.0.0.0",
         "netstandard2.0": "4.0.0.0",
-        "uap10.0.15138": "4.0.0.0"
+        "uap10.0.16299": "4.0.0.0"
       }
     },
     "System.Web.Abstractions": {
@@ -5084,7 +5502,7 @@
       "InboxOn": {
         "netcoreapp2.0": "4.0.0.0",
         "netcoreapp2.1": "4.0.1.0",
-        "uap10.0.15138": "4.0.1.0"
+        "uap10.0.16299": "4.0.1.0"
       }
     },
     "System.Web.Mobile": {
@@ -5130,7 +5548,7 @@
         "portable46-wp81+wpa81": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "win8": "4.0.0.0",
         "wp8": "2.0.6.0",
         "wpa81": "4.0.0.0",
@@ -5143,6 +5561,12 @@
     "System.Windows.Controls.Ribbon": {
       "InboxOn": {
         "net45": "4.0.0.0"
+      }
+    },
+    "System.Windows.Extensions": {
+      "InboxOn": {},
+      "AssemblyVersionInPackageVersion": {
+        "4.0.0.0": "4.6.0"
       }
     },
     "System.Windows.Forms": {
@@ -5213,7 +5637,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "win8": "4.0.0.0",
         "wp8": "2.0.5.0",
         "wpa81": "4.0.0.0",
@@ -5241,7 +5665,7 @@
         "netstandard2.0": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "win8": "4.0.0.0",
         "wp8": "2.0.5.0",
         "wpa81": "4.0.0.0",
@@ -5279,7 +5703,7 @@
         "netstandard2.0": "4.1.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.2.1.0",
+        "uap10.0.16299": "4.2.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -5312,7 +5736,7 @@
         "portable46-wp81+wpa81": "4.0.0.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.0.0.0",
+        "uap10.0.16299": "4.0.0.0",
         "win8": "4.0.0.0",
         "wp8": "2.0.5.0",
         "wpa81": "4.0.0.0",
@@ -5349,7 +5773,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -5379,7 +5803,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -5418,7 +5842,7 @@
         "netstandard2.0": "4.0.10.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "win8": "4.0.0.0",
         "wp8": "4.0.0.0",
         "wpa81": "4.0.0.0",
@@ -5448,7 +5872,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -5474,7 +5898,7 @@
         "netstandard2.0": "4.0.1.0",
         "monoandroid10": "Any",
         "monotouch10": "Any",
-        "uap10.0.15138": "4.1.1.0",
+        "uap10.0.16299": "4.1.1.0",
         "xamarinios10": "Any",
         "xamarinmac20": "Any",
         "xamarintvos10": "Any",
@@ -5541,7 +5965,7 @@
       "InboxOn": {
         "netcoreapp2.0": "4.0.0.0",
         "net45": "4.0.0.0",
-        "uap10.0.15138": "4.0.0.0"
+        "uap10.0.16299": "4.0.0.0"
       }
     },
     "WindowsFormsIntegration": {
@@ -5556,7 +5980,8 @@
     }
   },
   "ModulesToPackages": {
-    "sni.dll": "runtime.native.System.Data.SqlClient.sni"
+    "sni.dll": "runtime.native.System.Data.SqlClient.sni",
+    "System.IO.Ports.Native": "runtime.native.System.IO.Ports"
   },
   "MetaPackages": {
     "NETStandard.Library": [

@@ -26,7 +26,7 @@ internal static partial class Interop
 
         public static unsafe int Sysctl(Span<int> name, ref byte* value, ref int len)
         {
-            fixed (int * ptr = &name.DangerousGetPinnableReference())
+            fixed (int * ptr = &MemoryMarshal.GetReference(name))
             {
                 return Sysctl(ptr, name.Length, ref value, ref len);
             }
@@ -45,7 +45,7 @@ internal static partial class Interop
                 ret = Sysctl(name,  name_len, pBuffer, &bytesLength);
                 if (ret != 0)
                 {
-                    throw new InvalidOperationException(string.Format("sysctl returned {0}", ret));
+                    throw new InvalidOperationException(SR.Format(SR.InvalidSysctl, *name, Marshal.GetLastWin32Error()));
                 }
                 pBuffer = (byte*)Marshal.AllocHGlobal((int)bytesLength);
             }
@@ -57,7 +57,7 @@ internal static partial class Interop
                     // This is case we allocated memory for caller
                     Marshal.FreeHGlobal((IntPtr)pBuffer);
                 }
-                throw new InvalidOperationException(string.Format("sysctl returned {0}", ret));
+                throw new InvalidOperationException(SR.Format(SR.InvalidSysctl, *name, Marshal.GetLastWin32Error()));
             }
 
             value = pBuffer;

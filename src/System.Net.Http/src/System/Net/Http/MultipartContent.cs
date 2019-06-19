@@ -5,7 +5,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Net.Http.Headers;
 using System.Text;
@@ -49,7 +48,6 @@ namespace System.Net.Http
             {
                 throw new ArgumentException(SR.net_http_argument_empty_string, nameof(subtype));
             }
-            Contract.EndContractBlock();
             ValidateBoundary(boundary);
 
             _boundary = boundary;
@@ -83,14 +81,13 @@ namespace System.Net.Http
             if (boundary.Length > 70)
             {
                 throw new ArgumentOutOfRangeException(nameof(boundary), boundary,
-                    string.Format(System.Globalization.CultureInfo.InvariantCulture, SR.net_http_content_field_too_long, 70));
+                    SR.Format(System.Globalization.CultureInfo.InvariantCulture, SR.net_http_content_field_too_long, 70));
             }
             // Cannot end with space.
             if (boundary.EndsWith(" ", StringComparison.Ordinal))
             {
-                throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, SR.net_http_headers_invalid_value, boundary), nameof(boundary));
+                throw new ArgumentException(SR.Format(System.Globalization.CultureInfo.InvariantCulture, SR.net_http_headers_invalid_value, boundary), nameof(boundary));
             }
-            Contract.EndContractBlock();
 
             const string AllowedMarks = @"'()+_,-./:=? ";
 
@@ -99,13 +96,13 @@ namespace System.Net.Http
                 if (('0' <= ch && ch <= '9') || // Digit.
                     ('a' <= ch && ch <= 'z') || // alpha.
                     ('A' <= ch && ch <= 'Z') || // ALPHA.
-                    (AllowedMarks.IndexOf(ch) >= 0)) // Marks.
+                    (AllowedMarks.Contains(ch))) // Marks.
                 {
                     // Valid.
                 }
                 else
                 {
-                    throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, SR.net_http_headers_invalid_value, boundary), nameof(boundary));
+                    throw new ArgumentException(SR.Format(System.Globalization.CultureInfo.InvariantCulture, SR.net_http_headers_invalid_value, boundary), nameof(boundary));
                 }
             }
         }
@@ -121,7 +118,6 @@ namespace System.Net.Http
             {
                 throw new ArgumentNullException(nameof(content));
             }
-            Contract.EndContractBlock();
 
             _nestedContent.Add(content);
         }
@@ -275,10 +271,10 @@ namespace System.Net.Http
             return scratch.ToString();
         }
 
-        private static Task EncodeStringToStreamAsync(Stream stream, string input)
+        private static ValueTask EncodeStringToStreamAsync(Stream stream, string input)
         {
             byte[] buffer = HttpRuleParser.DefaultHttpEncoding.GetBytes(input);
-            return stream.WriteAsync(buffer, 0, buffer.Length);
+            return stream.WriteAsync(new ReadOnlyMemory<byte>(buffer));
         }
 
         private static Stream EncodeStringToNewStream(string input)
@@ -382,6 +378,14 @@ namespace System.Net.Http
                 }
             }
 
+            public override async ValueTask DisposeAsync()
+            {
+                foreach (Stream s in _streams)
+                {
+                    await s.DisposeAsync().ConfigureAwait(false);
+                }
+            }
+
             public override bool CanRead => true;
             public override bool CanSeek => true;
             public override bool CanWrite => false;
@@ -417,9 +421,9 @@ namespace System.Net.Http
                 }
             }
 
-            public override int Read(Span<byte> destination)
+            public override int Read(Span<byte> buffer)
             {
-                if (destination.Length == 0)
+                if (buffer.Length == 0)
                 {
                     return 0;
                 }
@@ -428,7 +432,7 @@ namespace System.Net.Http
                 {
                     if (_current != null)
                     {
-                        int bytesRead = _current.Read(destination);
+                        int bytesRead = _current.Read(buffer);
                         if (bytesRead != 0)
                         {
                             _position += bytesRead;
@@ -453,8 +457,8 @@ namespace System.Net.Http
                 return ReadAsyncPrivate(new Memory<byte>(buffer, offset, count), cancellationToken).AsTask();
             }
 
-            public override ValueTask<int> ReadAsync(Memory<byte> destination, CancellationToken cancellationToken = default) =>
-                ReadAsyncPrivate(destination, cancellationToken);
+            public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+                ReadAsyncPrivate(buffer, cancellationToken);
 
             public override IAsyncResult BeginRead(byte[] array, int offset, int count, AsyncCallback asyncCallback, object asyncState) =>
                 TaskToApm.Begin(ReadAsync(array, offset, count, CancellationToken.None), asyncCallback, asyncState);
@@ -462,9 +466,9 @@ namespace System.Net.Http
             public override int EndRead(IAsyncResult asyncResult) =>
                 TaskToApm.End<int>(asyncResult);
 
-            public async ValueTask<int> ReadAsyncPrivate(Memory<byte> destination, CancellationToken cancellationToken)
+            public async ValueTask<int> ReadAsyncPrivate(Memory<byte> buffer, CancellationToken cancellationToken)
             {
-                if (destination.Length == 0)
+                if (buffer.Length == 0)
                 {
                     return 0;
                 }
@@ -473,7 +477,7 @@ namespace System.Net.Http
                 {
                     if (_current != null)
                     {
-                        int bytesRead = await _current.ReadAsync(destination, cancellationToken).ConfigureAwait(false);
+                        int bytesRead = await _current.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
                         if (bytesRead != 0)
                         {
                             _position += bytesRead;
@@ -581,9 +585,9 @@ namespace System.Net.Http
             public override void Flush() { }
             public override void SetLength(long value) { throw new NotSupportedException(); }
             public override void Write(byte[] buffer, int offset, int count) { throw new NotSupportedException(); }
-            public override void Write(ReadOnlySpan<byte> source) { throw new NotSupportedException(); }
+            public override void Write(ReadOnlySpan<byte> buffer) { throw new NotSupportedException(); }
             public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) { throw new NotSupportedException(); }
-            public override Task WriteAsync(ReadOnlyMemory<byte> source, CancellationToken cancellationToken = default) { throw new NotSupportedException(); }
+            public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) { throw new NotSupportedException(); }
         }
         #endregion Serialization
     }

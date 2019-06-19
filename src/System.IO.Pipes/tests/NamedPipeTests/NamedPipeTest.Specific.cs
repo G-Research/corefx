@@ -16,7 +16,7 @@ namespace System.IO.Pipes.Tests
     /// The Specific NamedPipe tests cover edge cases or otherwise narrow cases that
     /// show up within particular server/client directional combinations.
     /// </summary>
-    [ActiveIssue(22271, TargetFrameworkMonikers.UapNotUapAot)]
+    [ActiveIssue(22271, TargetFrameworkMonikers.Uap)]
     public class NamedPipeTest_Specific : NamedPipeTestBase
     {
         [Fact]
@@ -91,7 +91,7 @@ namespace System.IO.Pipes.Tests
                 while (clients.Count > 0)
                 {
                     Task<Task> firstClient = Task.WhenAny(clients);
-                    await WhenAllOrAnyFailed(ServerWaitReadAndWriteAsync(), firstClient);
+                    await new Task[] { ServerWaitReadAndWriteAsync(), firstClient }.WhenAllOrAnyFailed();
                     clients.Remove(firstClient.Result);
                 }
 
@@ -173,11 +173,11 @@ namespace System.IO.Pipes.Tests
 
                 Task[] serverWaits = (from server in servers select server.WaitForConnectionAsync()).ToArray();
                 Task[] clientWaits = (from client in clients select client.ConnectAsync()).ToArray();
-                await WhenAllOrAnyFailed(serverWaits.Concat(clientWaits).ToArray());
+                await serverWaits.Concat(clientWaits).ToArray().WhenAllOrAnyFailed();
 
                 Task[] serverSends = (from server in servers select server.WriteAsync(new byte[1], 0, 1)).ToArray();
                 Task<int>[] clientReceives = (from client in clients select client.ReadAsync(new byte[1], 0, 1)).ToArray();
-                await WhenAllOrAnyFailed(serverSends.Concat(clientReceives).ToArray());
+                await serverSends.Concat(clientReceives).ToArray().WhenAllOrAnyFailed();
             }
             finally
             {
@@ -191,33 +191,6 @@ namespace System.IO.Pipes.Tests
                     servers[i]?.Dispose();
                 }
             }
-        }
-
-        private static Task WhenAllOrAnyFailed(params Task[] tasks)
-        {
-            int remaining = tasks.Length;
-            var tcs = new TaskCompletionSource<bool>();
-            foreach (Task t in tasks)
-            {
-                t.ContinueWith(a =>
-                {
-                    if (a.IsFaulted)
-                    {
-                        tcs.TrySetException(a.Exception.InnerExceptions);
-                        Interlocked.Decrement(ref remaining);
-                    }
-                    else if (a.IsCanceled)
-                    {
-                        tcs.TrySetCanceled();
-                        Interlocked.Decrement(ref remaining);
-                    }
-                    else if (Interlocked.Decrement(ref remaining) == 0)
-                    {
-                        tcs.TrySetResult(true);
-                    }
-                }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
-            }
-            return tcs.Task;
         }
 
         [Theory]
@@ -324,27 +297,31 @@ namespace System.IO.Pipes.Tests
             {
                 using (var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.Impersonation))
                 {
-                    int expectedNumberOfServerInstances;
                     Task serverTask = server.WaitForConnectionAsync();
 
                     client.Connect();
                     await serverTask;
 
-                    Assert.True(Interop.TryGetNumberOfServerInstances(client.SafePipeHandle, out expectedNumberOfServerInstances), "GetNamedPipeHandleState failed");
-                    Assert.Equal(expectedNumberOfServerInstances, client.NumberOfServerInstances);
+                    Assert.True(InteropTest.TryGetNumberOfServerInstances(client.SafePipeHandle, out uint expectedNumberOfServerInstances), "GetNamedPipeHandleState failed");
+                    Assert.Equal(expectedNumberOfServerInstances, (uint)client.NumberOfServerInstances);
                 }
             }
         }
 
-        [Fact]
+        [ConditionalTheory(typeof(PlatformDetection), nameof(PlatformDetection.IsNotWindowsNanoServer))]
+        [InlineData(TokenImpersonationLevel.None, false)]
+        [InlineData(TokenImpersonationLevel.Anonymous, false)]
+        [InlineData(TokenImpersonationLevel.Identification, true)]
+        [InlineData(TokenImpersonationLevel.Impersonation, true)]
+        [InlineData(TokenImpersonationLevel.Delegation, true)]
         [PlatformSpecific(TestPlatforms.Windows)] // Win32 P/Invokes to verify the user name
-        public async Task Windows_GetImpersonationUserName_Succeed()
+        public async Task Windows_GetImpersonationUserName_Succeed(TokenImpersonationLevel level, bool expectedResult)
         {
             string pipeName = GetUniquePipeName();
 
             using (var server = new NamedPipeServerStream(pipeName))
             {
-                using (var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.Impersonation))
+                using (var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.None, level))
                 {
                     string expectedUserName;
                     Task serverTask = server.WaitForConnectionAsync();
@@ -352,8 +329,20 @@ namespace System.IO.Pipes.Tests
                     client.Connect();
                     await serverTask;
 
-                    Assert.True(Interop.TryGetImpersonationUserName(server.SafePipeHandle, out expectedUserName), "GetNamedPipeHandleState failed");
-                    Assert.Equal(expectedUserName, server.GetImpersonationUserName());
+                    Assert.Equal(expectedResult, InteropTest.TryGetImpersonationUserName(server.SafePipeHandle, out expectedUserName));
+
+                    if (!expectedResult)
+                    {
+                        Assert.Equal(string.Empty, expectedUserName);
+                        Assert.Throws<IOException>(() => server.GetImpersonationUserName());
+                    }
+                    else
+                    {
+                        string actualUserName = server.GetImpersonationUserName();
+                        Assert.NotNull(actualUserName);
+                        Assert.False(string.IsNullOrWhiteSpace(actualUserName));
+                        Assert.Equal(expectedUserName, actualUserName);
+                    }
                 }
             }
         }
@@ -605,5 +594,81 @@ namespace System.IO.Pipes.Tests
             }
         }
 
+        [Fact]
+        public void ClientConnect_Throws_Timeout_When_Pipe_Not_Found()
+        {
+            string pipeName = GetUniquePipeName();
+            using (NamedPipeClientStream client = new NamedPipeClientStream(pipeName))
+            {
+                Assert.Throws<TimeoutException>(() => client.Connect(91));
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetCancellationTokens))]
+        public async void ClientConnectAsync_Throws_Timeout_When_Pipe_Not_Found(CancellationToken cancellationToken)
+        {
+            string pipeName = GetUniquePipeName();
+            using (NamedPipeClientStream client = new NamedPipeClientStream(pipeName))
+            {
+                Task waitingClient = client.ConnectAsync(92, cancellationToken);
+                await Assert.ThrowsAsync<TimeoutException>(() => { return waitingClient; });
+            }
+        }
+
+        [Fact]
+        [PlatformSpecific(TestPlatforms.Windows)] // Unix ignores MaxNumberOfServerInstances and second client also connects.
+        public void ClientConnect_Throws_Timeout_When_Pipe_Busy()
+        {
+            string pipeName = GetUniquePipeName();
+
+            using (NamedPipeServerStream server = new NamedPipeServerStream(pipeName))
+            using (NamedPipeClientStream firstClient = new NamedPipeClientStream(pipeName))
+            using (NamedPipeClientStream secondClient = new NamedPipeClientStream(pipeName))
+            {
+                const int timeout = 10_000;
+                Task[] clientAndServerTasks = new[]
+                    {
+                        firstClient.ConnectAsync(timeout),
+                        Task.Run(() => server.WaitForConnection())
+                    };
+
+                Assert.True(Task.WaitAll(clientAndServerTasks, timeout));
+
+                Assert.Throws<TimeoutException>(() => secondClient.Connect(93));
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetCancellationTokens))]
+        [PlatformSpecific(TestPlatforms.Windows)] // Unix ignores MaxNumberOfServerInstances and second client also connects.
+        public async void ClientConnectAsync_With_Cancellation_Throws_Timeout_When_Pipe_Busy(CancellationToken cancellationToken)
+        {
+            string pipeName = GetUniquePipeName();
+
+            using (NamedPipeServerStream server = new NamedPipeServerStream(pipeName))
+            using (NamedPipeClientStream firstClient = new NamedPipeClientStream(pipeName))
+            using (NamedPipeClientStream secondClient = new NamedPipeClientStream(pipeName))
+            {
+                const int timeout = 10_000;
+                Task[] clientAndServerTasks = new[]
+                    {
+                        firstClient.ConnectAsync(timeout),
+                        Task.Run(() => server.WaitForConnection())
+                    };
+
+                Assert.True(Task.WaitAll(clientAndServerTasks, timeout));
+
+                Task waitingClient = secondClient.ConnectAsync(94, cancellationToken);
+                await Assert.ThrowsAsync<TimeoutException>(() => { return waitingClient; });
+            }
+        }
+
+        public static IEnumerable<object[]> GetCancellationTokens =>
+            new []
+            {
+                new object[] { CancellationToken.None },
+                new object[] { new CancellationTokenSource().Token },
+            };
     }
 }

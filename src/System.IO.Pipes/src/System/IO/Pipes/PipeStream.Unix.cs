@@ -6,7 +6,9 @@ using Microsoft.Win32.SafeHandles;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Security;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,6 +25,9 @@ namespace System.IO.Pipes
 
         /// <summary>Characters that can't be used in a pipe's name.</summary>
         private static readonly char[] s_invalidFileNameChars = Path.GetInvalidFileNameChars();
+
+        /// <summary>Characters that can't be used in an absolute path pipe's name.</summary>
+        private static readonly char[] s_invalidPathNameChars = Path.GetInvalidPathChars();
 
         /// <summary>Prefix to prepend to all pipe names.</summary>
         private static readonly string s_pipePrefix = Path.Combine(Path.GetTempPath(), "CoreFxPipe_");
@@ -41,16 +46,27 @@ namespace System.IO.Pipes
                 throw new ArgumentOutOfRangeException(nameof(pipeName), SR.ArgumentOutOfRange_AnonymousReserved);
             }
 
-            if (pipeName.IndexOfAny(s_invalidFileNameChars) >= 0)
+            // Since pipes are stored as files in the system we support either an absolute path to a file name
+            // or a file name. The support of absolute path was added to allow working around the limited
+            // length available for the pipe name when concatenated with the temp path, while being
+            // cross-platform with Windows (which has only '\' as an invalid char).
+            if (Path.IsPathRooted(pipeName))
             {
-                // Since pipes are stored as files in the file system, we don't support
-                // pipe names that are actually paths or that otherwise have invalid
-                // filename characters in them.
-                throw new PlatformNotSupportedException(SR.PlatformNotSupproted_InvalidNameChars);
+                if (pipeName.IndexOfAny(s_invalidPathNameChars) >= 0 || pipeName[pipeName.Length - 1] == Path.DirectorySeparatorChar)
+                    throw new PlatformNotSupportedException(SR.PlatformNotSupported_InvalidPipeNameChars);
+                
+                // Caller is in full control of file location.
+                return pipeName;
             }
 
-            // Return the pipe path.  The pipe is created directly under %TMPDIR%.  We previously
-            // didn't put it into a subdirectory because it only existed on disk for the duration
+            if (pipeName.IndexOfAny(s_invalidFileNameChars) >= 0)
+            {
+                throw new PlatformNotSupportedException(SR.PlatformNotSupported_InvalidPipeNameChars);
+            }
+
+            // The pipe is created directly under Path.GetTempPath() with "CoreFXPipe_" prefix.
+            //
+            // We previously didn't put it into a subdirectory because it only existed on disk for the duration
             // between when the server started listening in WaitForConnection and when the client
             // connected, after which the pipe was deleted.  We now create the pipe when the
             // server stream is created, which leaves it on disk longer, but we can't change the
@@ -114,7 +130,7 @@ namespace System.IO.Pipes
             }
 
             // For anonymous pipes, read from the file descriptor.
-            fixed (byte* bufPtr = &buffer.DangerousGetPinnableReference())
+            fixed (byte* bufPtr = &MemoryMarshal.GetReference(buffer))
             {
                 int result = CheckPipeCall(Interop.Sys.Read(_handle, bufPtr, buffer.Length));
                 Debug.Assert(result <= buffer.Length);
@@ -149,7 +165,7 @@ namespace System.IO.Pipes
             }
 
             // For anonymous pipes, write the file descriptor.
-            fixed (byte* bufPtr = &buffer.DangerousGetPinnableReference())
+            fixed (byte* bufPtr = &MemoryMarshal.GetReference(buffer))
             {
                 while (buffer.Length > 0)
                 {
@@ -159,54 +175,13 @@ namespace System.IO.Pipes
             }
         }
 
-        private async Task<int> ReadAsyncCore(Memory<byte> destination, CancellationToken cancellationToken)
+        private async ValueTask<int> ReadAsyncCore(Memory<byte> destination, CancellationToken cancellationToken)
         {
             Debug.Assert(this is NamedPipeClientStream || this is NamedPipeServerStream, $"Expected a named pipe, got a {GetType()}");
 
-            Socket socket = InternalHandle.NamedPipeSocket;
-
             try
             {
-                // TODO #22608:
-                // Remove all of this cancellation workaround once Socket.ReceiveAsync
-                // that accepts a CancellationToken is available.
-
-                // If a cancelable token is used and there's no data, issue a zero-length read so that
-                // we're asynchronously notified when data is available, and concurrently monitor the
-                // supplied cancellation token.  If cancellation is requested, we will end up "leaking"
-                // the zero-length read until data becomes available, at which point it'll be satisfied.
-                // But it's very rare to reuse a stream after an operation has been canceled, so even if
-                // we do incur such a situation, it's likely to be very short lived.
-                if (cancellationToken.CanBeCanceled)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (socket.Available == 0)
-                    {
-                        Task<int> t = socket.ReceiveAsync(Array.Empty<byte>(), SocketFlags.None);
-                        if (!t.IsCompletedSuccessfully)
-                        {
-                            var cancelTcs = new TaskCompletionSource<bool>();
-                            using (cancellationToken.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), cancelTcs))
-                            {
-                                if (t == await Task.WhenAny(t, cancelTcs.Task).ConfigureAwait(false))
-                                {
-                                    t.GetAwaiter().GetResult(); // propagate any failure
-                                }
-                                cancellationToken.ThrowIfCancellationRequested();
-
-                                // At this point there was data available.  In the rare case where multiple concurrent
-                                // ReadAsyncs are issued against the PipeStream, worst case is the reads that lose
-                                // the race condition for the data will end up in a non-cancelable state as part of
-                                // the actual async receive operation.
-                            }
-                        }
-                    }
-                }
-
-                // Issue the asynchronous read.
-                return await (destination.TryGetArray(out ArraySegment<byte> buffer) ?
-                    socket.ReceiveAsync(buffer, SocketFlags.None) :
-                    socket.ReceiveAsync(destination.ToArray(), SocketFlags.None)).ConfigureAwait(false);
+                return await InternalHandle.NamedPipeSocket.ReceiveAsync(destination, SocketFlags.None, cancellationToken).ConfigureAwait(false);
             }
             catch (SocketException e)
             {
@@ -217,38 +192,14 @@ namespace System.IO.Pipes
         private async Task WriteAsyncCore(ReadOnlyMemory<byte> source, CancellationToken cancellationToken)
         {
             Debug.Assert(this is NamedPipeClientStream || this is NamedPipeServerStream, $"Expected a named pipe, got a {GetType()}");
+
             try
             {
-                // TODO #22608: Remove this terribly inefficient special-case once Socket.SendAsync
-                // accepts a Memory<T> in the near future.
-                byte[] buffer;
-                int offset, count;
-                if (source.DangerousTryGetArray(out ArraySegment<byte> segment))
+                while (source.Length > 0)
                 {
-                    buffer = segment.Array;
-                    offset = segment.Offset;
-                    count = segment.Count;
-                }
-                else
-                {
-                    buffer = source.ToArray();
-                    offset = 0;
-                    count = buffer.Length;
-                }
-
-                while (count > 0)
-                {
-                    // cancellationToken is (mostly) ignored.  We could institute a polling loop like we do for reads if 
-                    // cancellationToken.CanBeCanceled, but that adds costs regardless of whether the operation will be canceled, and 
-                    // most writes will complete immediately as they simply store data into the socket's buffer.  The only time we end 
-                    // up using it in a meaningful way is if a write completes partially, we'll check it on each individual write operation.
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    int bytesWritten = await _handle.NamedPipeSocket.SendAsync(new ArraySegment<byte>(buffer, offset, count), SocketFlags.None).ConfigureAwait(false);
-                    Debug.Assert(bytesWritten <= count);
-
-                    count -= bytesWritten;
-                    offset += bytesWritten;
+                    int bytesWritten = await _handle.NamedPipeSocket.SendAsync(source, SocketFlags.None, cancellationToken).ConfigureAwait(false);
+                    Debug.Assert(bytesWritten > 0 && bytesWritten <= source.Length);
+                    source = source.Slice(bytesWritten);
                 }
             }
             catch (SocketException e)
@@ -388,19 +339,20 @@ namespace System.IO.Pipes
         }
 
         /// <summary>Creates an anonymous pipe.</summary>
-        /// <param name="inheritability">The inheritability to try to use.  This may not always be honored, depending on platform.</param>
         /// <param name="reader">The resulting reader end of the pipe.</param>
         /// <param name="writer">The resulting writer end of the pipe.</param>
-        internal static unsafe void CreateAnonymousPipe(
-            HandleInheritability inheritability, out SafePipeHandle reader, out SafePipeHandle writer)
+        internal static unsafe void CreateAnonymousPipe(out SafePipeHandle reader, out SafePipeHandle writer)
         {
             // Allocate the safe handle objects prior to calling pipe/pipe2, in order to help slightly in low-mem situations
             reader = new SafePipeHandle();
             writer = new SafePipeHandle();
 
-            // Create the OS pipe
+            // Create the OS pipe.  We always create it as O_CLOEXEC (trying to do so atomically) so that the
+            // file descriptors aren't inherited.  Then if inheritability was requested, we opt-in the child file
+            // descriptor later; if the server file descriptor was also inherited, closing the server file
+            // descriptor would fail to signal EOF for the child side.
             int* fds = stackalloc int[2];
-            CreateAnonymousPipe(inheritability, fds);
+            Interop.CheckIo(Interop.Sys.Pipe(fds, Interop.Sys.PipeFlags.O_CLOEXEC));
 
             // Store the file descriptors into our safe handles
             reader.SetHandle(fds[Interop.Sys.ReadEndOfPipe]);
@@ -433,14 +385,7 @@ namespace System.IO.Pipes
             // If we don't, just return the buffer size that was passed to the constructor.
             return _handle != null ?
                 CheckPipeCall(Interop.Sys.Fcntl.GetPipeSz(_handle)) :
-                _outBufferSize;
-        }
-
-        internal static unsafe void CreateAnonymousPipe(HandleInheritability inheritability, int* fdsptr)
-        {
-            var flags = (inheritability & HandleInheritability.Inheritable) == 0 ?
-                Interop.Sys.PipeFlags.O_CLOEXEC : 0;
-            Interop.CheckIo(Interop.Sys.Pipe(fdsptr, flags));
+                (int)_outBufferSize;
         }
 
         internal static void ConfigureSocket(
@@ -457,9 +402,11 @@ namespace System.IO.Pipes
                 s.SendBufferSize = outBufferSize;
             }
 
-            if (inheritability != HandleInheritability.Inheritable)
+            // Sockets are created with O_CLOEXEC.  If inheritability has been requested, we need to unset the flag.
+            if (inheritability == HandleInheritability.Inheritable &&
+                Interop.Sys.Fcntl.SetFD(s.SafeHandle, 0) == -1)
             {
-                Interop.Sys.Fcntl.SetCloseOnExec(pipeHandle); // ignore failures, best-effort attempt
+                throw Interop.GetExceptionForIoErrno(Interop.Sys.GetLastErrorInfo());
             }
 
             switch (direction)
@@ -471,6 +418,14 @@ namespace System.IO.Pipes
                     s.Shutdown(SocketShutdown.Receive);
                     break;
             }
+        }
+
+        internal static Exception CreateExceptionForLastError(string pipeName = null)
+        {
+            Interop.ErrorInfo error = Interop.Sys.GetLastErrorInfo();
+            return error.Error == Interop.Error.ENOTSUP ?
+                new PlatformNotSupportedException(SR.Format(SR.PlatformNotSupported_OperatingSystemError, nameof(Interop.Error.ENOTSUP))) :
+                Interop.GetExceptionForIoErrno(error, pipeName);
         }
     }
 }

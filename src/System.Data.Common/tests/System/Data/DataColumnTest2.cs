@@ -53,7 +53,7 @@ namespace System.Data.Tests
             // set AllowDBNull=false 
             Assert.Throws<DataException>(() =>
             {
-                dc.AllowDBNull = false; //the exisiting row contains null value
+                dc.AllowDBNull = false; //the existing row contains null value
             });
 
             dt.Rows.Clear();
@@ -608,8 +608,8 @@ namespace System.Data.Tests
                 else
                     str = dr["expr"].ToString();
 
-                if (str == "7.60")
-                    str = "7.6";
+                if (str == 7.60m.ToString())
+                    str = 7.6.ToString();
 
                 Assert.Equal(temp, str);
             }

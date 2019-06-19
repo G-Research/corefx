@@ -7,11 +7,12 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 
 namespace System.Collections.Tests
 {
-    public class SortedListTests : RemoteExecutorTestBase
+    public class SortedListTests
     {
         [Fact]
         public void Ctor_Empty()
@@ -212,14 +213,12 @@ namespace System.Collections.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot, "Cannot do DebuggerAttribute testing on UapAot: requires internal Reflection on framework types.")]
         public void DebuggerAttribute_Empty()
         {
             Assert.Equal("Count = 0", DebuggerAttributes.ValidateDebuggerDisplayReferences(new SortedList()));
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot, "Cannot do DebuggerAttribute testing on UapAot: requires internal Reflection on framework types.")]
         public void DebuggerAttribute_NormalList()
         {
             var list = new SortedList() { { "a", 1 }, { "b", 2 } };
@@ -230,7 +229,6 @@ namespace System.Collections.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot, "Cannot do DebuggerAttribute testing on UapAot: requires internal Reflection on framework types.")]
         public void DebuggerAttribute_SynchronizedList()
         {
             var list = SortedList.Synchronized(new SortedList() { { "a", 1 }, { "b", 2 } });
@@ -241,7 +239,6 @@ namespace System.Collections.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot, "Cannot do DebuggerAttribute testing on UapAot: requires internal Reflection on framework types.")]
         public void DebuggerAttribute_NullSortedList_ThrowsArgumentNullException()
         {
             bool threwNull = false;
@@ -258,7 +255,6 @@ namespace System.Collections.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot, "This test intentionally reflects on an internal member of SortedList. Cannot do that on UaoAot.")]
         public void EnsureCapacity_NewCapacityLessThanMin_CapsToMaxArrayLength()
         {
             // A situation like this occurs for very large lengths of SortedList.
@@ -1300,6 +1296,15 @@ namespace System.Collections.Tests
             Helpers.PerformActionOnAllSortedListWrappers(sortList1, sortList2 =>
             {
                 AssertExtensions.Throws<ArgumentOutOfRangeException>("value", () => sortList2.Capacity = -1); // Capacity < 0
+            });
+        }
+
+        [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.IsNotIntMaxValueArrayIndexSupported))]
+        public void Capacity_Excessive()
+        {
+            var sortList1 = new SortedList();
+            Helpers.PerformActionOnAllSortedListWrappers(sortList1, sortList2 =>
+            {
                 Assert.Throws<OutOfMemoryException>(() => sortList2.Capacity = int.MaxValue); // Capacity is too large
             });
         }
@@ -1330,7 +1335,7 @@ namespace System.Collections.Tests
         [Fact]
         public void Item_Get_DifferentCulture()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 var sortList = new SortedList();
 
@@ -1372,7 +1377,7 @@ namespace System.Collections.Tests
                 {
                 }
 
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
@@ -1561,7 +1566,7 @@ namespace System.Collections.Tests
                 sortListMother.Add("Key_" + i, "Value_" + i);
             }
 
-            Assert.Equal(sortListMother.SyncRoot.GetType(), typeof(object));
+            Assert.Equal(sortListMother.SyncRoot.GetType(), typeof(SortedList));
 
             SortedList sortListSon = SortedList.Synchronized(sortListMother);
             _sortListGrandDaughter = SortedList.Synchronized(sortListSon);

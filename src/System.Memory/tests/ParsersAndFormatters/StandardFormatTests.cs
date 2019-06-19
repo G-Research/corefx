@@ -3,8 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
-using System.Text;
-using System.Linq;
 
 using Xunit;
 
@@ -41,7 +39,7 @@ namespace System.Buffers.Text.Tests
         [InlineData("", default(char), default(byte))]
         public static void StandardFormatParseSpan(string formatString, char expectedSymbol, byte expectedPrecision)
         {
-            ReadOnlySpan<char> span = formatString.AsReadOnlySpan();
+            ReadOnlySpan<char> span = formatString.AsSpan();
             StandardFormat format = StandardFormat.Parse(span);
             Assert.Equal(expectedSymbol, format.Symbol);
             Assert.Equal(expectedPrecision, format.Precision);
@@ -54,6 +52,24 @@ namespace System.Buffers.Text.Tests
         public static void StandardFormatParseNegative(string badFormatString)
         {
             Assert.Throws<FormatException>(() => StandardFormat.Parse(badFormatString));
+        }
+
+        [Theory]
+        [InlineData("G4", 'G', 4, true)]
+        [InlineData("n0", 'n', 0, true)]
+        [InlineData("d", 'd', StandardFormat.NoPrecision, true)]
+        [InlineData("x99", 'x', StandardFormat.MaxPrecision, true)]
+        [InlineData(null, default(char), default(byte), true)]
+        [InlineData("", default(char), default(byte), true)]
+        [InlineData("G$", default(char), default(byte), false)]
+        [InlineData("Ga", default(char), default(byte), false)]
+        [InlineData("G100", default(char), default(byte), false)]
+        public static void StandardFormatTryParse(string formatString, char expectedSymbol, byte expectedPrecision, bool expectedResult)
+        {
+            bool result = StandardFormat.TryParse(formatString, out StandardFormat format);
+            Assert.Equal(expectedSymbol, format.Symbol);
+            Assert.Equal(expectedPrecision, format.Precision);
+            Assert.Equal(expectedResult, result);
         }
 
         [Theory]

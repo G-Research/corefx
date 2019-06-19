@@ -2,7 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Buffers;
 using System.Diagnostics;
+using System.Text.Unicode;
 
 namespace System.Net.Http.Headers
 {
@@ -31,6 +33,7 @@ namespace System.Net.Http.Headers
         public string Name => _headerName;
         public HttpHeaderParser Parser => _knownHeader?.Parser;
         public HttpHeaderType HeaderType => _knownHeader == null ? HttpHeaderType.Custom : _knownHeader.HeaderType;
+        public KnownHeader KnownHeader => _knownHeader;
 
         public bool Equals(HeaderDescriptor other) =>
             _knownHeader == null ?
@@ -38,8 +41,6 @@ namespace System.Net.Http.Headers
                 _knownHeader == other._knownHeader;
         public override int GetHashCode() => _knownHeader?.GetHashCode() ?? StringComparer.OrdinalIgnoreCase.GetHashCode(_headerName);
         public override bool Equals(object obj) => throw new InvalidOperationException();   // Ensure this is never called, to avoid boxing
-        public static bool operator ==(HeaderDescriptor left, HeaderDescriptor right) => left.Equals(right);
-        public static bool operator !=(HeaderDescriptor left, HeaderDescriptor right) => !left.Equals(right);
 
         // Returns false for invalid header name.
         public static bool TryGet(string headerName, out HeaderDescriptor descriptor)
@@ -81,7 +82,7 @@ namespace System.Net.Http.Headers
                 return false;
             }
 
-            descriptor = new HeaderDescriptor(ByteArrayHelpers.GetStringFromByteSpan(headerName));
+            descriptor = new HeaderDescriptor(HttpRuleParser.GetTokenString(headerName));
             return true;
         }
 
@@ -100,19 +101,52 @@ namespace System.Net.Http.Headers
             }
 
             // If it's a known header value, use the known value instead of allocating a new string.
-            if (_knownHeader != null && _knownHeader.KnownValues != null)
+            if (_knownHeader != null)
             {
-                string[] knownValues = _knownHeader.KnownValues;
-                for (int i = 0; i < knownValues.Length; i++)
+                if (_knownHeader.KnownValues != null)
                 {
-                    if (ByteArrayHelpers.EqualsOrdinalAsciiIgnoreCase(knownValues[i], headerValue))
+                    string[] knownValues = _knownHeader.KnownValues;
+                    for (int i = 0; i < knownValues.Length; i++)
                     {
-                        return knownValues[i];
+                        if (ByteArrayHelpers.EqualsOrdinalAsciiIgnoreCase(knownValues[i], headerValue))
+                        {
+                            return knownValues[i];
+                        }
+                    }
+                }
+
+                if (_knownHeader == KnownHeaders.Location)
+                {
+                    // Normally Location should be in ISO-8859-1 but occasionally some servers respond with UTF-8.
+                    if (TryDecodeUtf8(headerValue, out string decoded))
+                    {
+                        return decoded;
                     }
                 }
             }
 
-            return ByteArrayHelpers.GetStringFromByteSpan(headerValue);
+            return HttpRuleParser.DefaultHttpEncoding.GetString(headerValue);
+        }
+
+        private static bool TryDecodeUtf8(ReadOnlySpan<byte> input, out string decoded)
+        {
+            char[] rented = ArrayPool<char>.Shared.Rent(input.Length);
+
+            try
+            {
+                if (Utf8.ToUtf16(input, rented, out _, out int charsWritten, replaceInvalidSequences: false) == OperationStatus.Done)
+                {
+                    decoded = new string(rented, 0, charsWritten);
+                    return true;
+                }
+            }
+            finally
+            {
+                ArrayPool<char>.Shared.Return(rented);
+            }
+
+            decoded = null;
+            return false;
         }
     }
 }

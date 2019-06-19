@@ -2,11 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
-using System.Collections.Specialized;
-using System.Security;
-using System.Runtime.InteropServices;
-
+using System.Diagnostics;
+using System.Globalization;
 
 namespace System.Runtime.Caching
 {
@@ -16,7 +13,7 @@ namespace System.Runtime.Caching
     // drop cache entries to avoid paging.  The second monitors the amount of memory used by
     // the cache itself, and helps determine when we should drop cache entries to avoid 
     // exceeding the cache's memory limit.  Both are configurable (see ConfigUtil.cs).
-    internal abstract class MemoryMonitor
+    internal abstract partial class MemoryMonitor
     {
         protected const int TERABYTE_SHIFT = 40;
         protected const long TERABYTE = 1L << TERABYTE_SHIFT;
@@ -39,22 +36,11 @@ namespace System.Runtime.Caching
         protected int[] _pressureHist;
         protected int _pressureTotal;
 
-        private static long s_totalPhysical;
-        private static long s_totalVirtual;
+        private static long s_totalPhysical = 0;
+        private static long s_totalVirtual = 0;
 
-        static MemoryMonitor()
-        {
-            Interop.Kernel32.MEMORYSTATUSEX memoryStatusEx;
-            memoryStatusEx.dwLength = (uint)Marshal.SizeOf(typeof(Interop.Kernel32.MEMORYSTATUSEX));
-            if (Interop.Kernel32.GlobalMemoryStatusEx(out memoryStatusEx) != 0)
-            {
-                s_totalPhysical = (long)memoryStatusEx.ullTotalPhys;
-                s_totalVirtual = (long)memoryStatusEx.ullTotalVirtual;
-            }
-        }
-
-        internal static long TotalPhysical { get { return s_totalPhysical; } }
-        internal static long TotalVirtual { get { return s_totalVirtual; } }
+        internal static long TotalPhysical => s_totalPhysical;
+        internal static long TotalVirtual => s_totalVirtual;
 
         internal int PressureLast { get { return _pressureHist[_i0]; } }
         internal int PressureHigh { get { return _pressureHigh; } }
@@ -71,9 +57,9 @@ namespace System.Runtime.Caching
 
         protected void InitHistory()
         {
-            Dbg.Assert(_pressureHigh > 0, "_pressureHigh > 0");
-            Dbg.Assert(_pressureLow > 0, "_pressureLow > 0");
-            Dbg.Assert(_pressureLow <= _pressureHigh, "_pressureLow <= _pressureHigh");
+            Debug.Assert(_pressureHigh > 0, "_pressureHigh > 0");
+            Debug.Assert(_pressureLow > 0, "_pressureLow > 0");
+            Debug.Assert(_pressureLow <= _pressureHigh, "_pressureLow <= _pressureHigh");
 
             int pressure = GetCurrentPressure();
 
@@ -95,12 +81,10 @@ namespace System.Runtime.Caching
             _pressureTotal += pressure;
             _pressureHist[_i0] = pressure;
 
-#if DEBUG
             Dbg.Trace("MemoryCacheStats", this.GetType().Name + ".Update: last=" + pressure
                         + ",high=" + PressureHigh
                         + ",low=" + PressureLow
-                        + " " + Dbg.FormatLocalDate(DateTime.Now));
-#endif
+                        + " " + DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
         }
     }
 }

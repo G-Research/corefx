@@ -5,7 +5,7 @@
 using System;
 using System.Collections;
 using System.Collections.Specialized;
-using System.ComponentModel;
+using System.ComponentModel;
 using Xunit;
 
 namespace System.Diagnostics.Tests
@@ -27,7 +27,7 @@ namespace System.Diagnostics.Tests
         public static void CounterCreationData_SetCounterType_Invalud()
         {
             CounterCreationData ccd = new CounterCreationData("Simple", "Simple Help", PerformanceCounterType.RawBase);
-            Assert.Throws<InvalidEnumArgumentException>(() => ccd.CounterType = (PerformanceCounterType)Int32.MaxValue);
+            Assert.Throws<InvalidEnumArgumentException>(() => ccd.CounterType = (PerformanceCounterType)int.MaxValue);
         }
     }
 }

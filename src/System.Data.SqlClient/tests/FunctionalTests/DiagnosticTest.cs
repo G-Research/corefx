@@ -5,8 +5,10 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Xml;
+using Microsoft.DotNet.RemoteExecutor;
 using Microsoft.SqlServer.TDS;
 using Microsoft.SqlServer.TDS.Done;
 using Microsoft.SqlServer.TDS.EndPoint;
@@ -14,12 +16,10 @@ using Microsoft.SqlServer.TDS.Error;
 using Microsoft.SqlServer.TDS.Servers;
 using Microsoft.SqlServer.TDS.SQLBatch;
 using Xunit;
-using System.Runtime.CompilerServices;
 
 namespace System.Data.SqlClient.Tests
 {
-    [ActiveIssue("dotnet/corefx #17925", TestPlatforms.Any)]
-    public class DiagnosticTest : RemoteExecutorTestBase
+    public class DiagnosticTest
     {
         private const string BadConnectionString = "data source = bad; initial catalog = bad; uid = bad; password = bad; connection timeout = 1;";
         private static readonly string s_tcpConnStr = Environment.GetEnvironmentVariable("TEST_TCP_CONN_STR") ?? string.Empty;
@@ -27,10 +27,10 @@ namespace System.Data.SqlClient.Tests
         public static bool IsConnectionStringConfigured() => s_tcpConnStr != string.Empty;
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteScalarTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnostics(connectionString =>
                 {
@@ -44,15 +44,15 @@ namespace System.Data.SqlClient.Tests
                         var output = cmd.ExecuteScalar();
                     }
                 });
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteScalarErrorTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnostics(connectionString =>
                 {
@@ -68,15 +68,15 @@ namespace System.Data.SqlClient.Tests
                         catch { }
                     }
                 });
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteNonQueryTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnostics(connectionString =>
                 {
@@ -90,15 +90,15 @@ namespace System.Data.SqlClient.Tests
                         var output = cmd.ExecuteNonQuery();
                     }
                 });
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteNonQueryErrorTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnostics(connectionString =>
                 {
@@ -128,15 +128,15 @@ namespace System.Data.SqlClient.Tests
                     }
                     Console.WriteLine("SqlClient.DiagnosticTest.ExecuteNonQueryErrorTest Connection Disposed");
                 });
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteReaderTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnostics(connectionString =>
                 {
@@ -151,15 +151,15 @@ namespace System.Data.SqlClient.Tests
                         while (reader.Read()) { }
                     }
                 });
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteReaderErrorTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnostics(connectionString =>
                 {
@@ -177,15 +177,15 @@ namespace System.Data.SqlClient.Tests
                         catch { }
                     }
                 });
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteReaderWithCommandBehaviorTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnostics(connectionString =>
                 {
@@ -200,15 +200,15 @@ namespace System.Data.SqlClient.Tests
                         while (reader.Read()) { }
                     }
                 });
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [ConditionalFact(nameof(IsConnectionStringConfigured))]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteXmlReaderTest()
         {
-            RemoteInvoke(cs =>
+            RemoteExecutor.Invoke(cs =>
             {
                 CollectStatisticsDiagnostics(_ =>
                 {
@@ -223,15 +223,15 @@ namespace System.Data.SqlClient.Tests
                         while (reader.Read()) { }
                     }
                 });
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }, s_tcpConnStr).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteXmlReaderErrorTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnostics(connectionString =>
                 {
@@ -249,15 +249,15 @@ namespace System.Data.SqlClient.Tests
                         catch { }
                     }
                 });
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteScalarAsyncTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnosticsAsync(async connectionString =>
                 {
@@ -271,15 +271,15 @@ namespace System.Data.SqlClient.Tests
                         var output = await cmd.ExecuteScalarAsync();
                     }
                 }).GetAwaiter().GetResult();
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteScalarAsyncErrorTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnosticsAsync(async connectionString =>
                 {
@@ -295,15 +295,15 @@ namespace System.Data.SqlClient.Tests
                         catch { }
                     }
                 }).GetAwaiter().GetResult();
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteNonQueryAsyncTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnosticsAsync(async connectionString =>
                 {
@@ -317,15 +317,15 @@ namespace System.Data.SqlClient.Tests
                         var output = await cmd.ExecuteNonQueryAsync();
                     }
                 }).GetAwaiter().GetResult();
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteNonQueryAsyncErrorTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnosticsAsync(async connectionString =>
                 {
@@ -340,15 +340,15 @@ namespace System.Data.SqlClient.Tests
                         catch { }
                     }
                 }).GetAwaiter().GetResult();
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteReaderAsyncTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnosticsAsync(async connectionString =>
                 {
@@ -363,15 +363,15 @@ namespace System.Data.SqlClient.Tests
                         while (reader.Read()) { }
                     }
                 }).GetAwaiter().GetResult();
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteReaderAsyncErrorTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnosticsAsync(async connectionString =>
                 {
@@ -389,15 +389,15 @@ namespace System.Data.SqlClient.Tests
                         catch { }
                     }
                 }).GetAwaiter().GetResult();
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [ConditionalFact(nameof(IsConnectionStringConfigured))]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteXmlReaderAsyncTest()
         {
-            RemoteInvoke(cs =>
+            RemoteExecutor.Invoke(cs =>
             {
                 CollectStatisticsDiagnosticsAsync(async _ =>
                 {
@@ -412,15 +412,15 @@ namespace System.Data.SqlClient.Tests
                         while (reader.Read()) { }
                     }
                 }).GetAwaiter().GetResult();
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }, s_tcpConnStr).Dispose();
         }
 
         [ConditionalFact(nameof(IsConnectionStringConfigured))]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ExecuteXmlReaderAsyncErrorTest()
         {
-            RemoteInvoke(cs =>
+            RemoteExecutor.Invoke(cs =>
             {
                 CollectStatisticsDiagnosticsAsync(async _ =>
                 {
@@ -438,15 +438,15 @@ namespace System.Data.SqlClient.Tests
                         catch { }
                     }
                 }).GetAwaiter().GetResult();
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }, s_tcpConnStr).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ConnectionOpenTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnostics(connectionString =>
                 {
@@ -459,15 +459,15 @@ namespace System.Data.SqlClient.Tests
                 }, true);
 
                 Console.WriteLine("SqlClient.DiagnosticsTest.ConnectionOpenTest:: Done with Diagnostics collection");
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
-        [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.IsNotWindowsSubsystemForLinux))] // [ActiveIssue(11057)]
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ConnectionOpenErrorTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnostics(_ =>
                 {
@@ -476,15 +476,15 @@ namespace System.Data.SqlClient.Tests
                         try { sqlConnection.Open(); } catch { }
                     }
                 });
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ConnectionOpenAsyncTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnosticsAsync(async connectionString =>
                 {
@@ -493,15 +493,15 @@ namespace System.Data.SqlClient.Tests
                         await sqlConnection.OpenAsync();
                     }
                 }).GetAwaiter().GetResult();
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 
-        [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot)] // Internals reflection not supported on uapaot
+        [ConditionalFact(typeof(PlatformDetection), nameof(PlatformDetection.IsNotWindowsSubsystemForLinux))] // [ActiveIssue(11057)]
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework,  "Feature not available on Framework")]
         public void ConnectionOpenAsyncErrorTest()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 CollectStatisticsDiagnosticsAsync(async _ =>
                 {
@@ -510,7 +510,7 @@ namespace System.Data.SqlClient.Tests
                         try { await sqlConnection.OpenAsync(); } catch { }
                     }
                 }).GetAwaiter().GetResult();
-                return SuccessExitCode;
+                return RemoteExecutor.SuccessExitCode;
             }).Dispose();
         }
 

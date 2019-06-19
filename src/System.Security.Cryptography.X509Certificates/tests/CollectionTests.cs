@@ -228,7 +228,8 @@ namespace System.Security.Cryptography.X509Certificates.Tests
                 Assert.Throws<ArgumentNullException>(() => ilist.Remove(null));
             }
 
-            Assert.Throws<ArgumentNullException>(() => new X509CertificateCollection.X509CertificateEnumerator(null));
+            AssertExtensions.Throws<ArgumentNullException, NullReferenceException>(
+                () => new X509CertificateCollection.X509CertificateEnumerator(null));
         }
 
         [Fact]
@@ -458,7 +459,6 @@ namespace System.Security.Cryptography.X509Certificates.Tests
 
         [Fact]
         // On Desktop, list is untyped so it allows arbitrary types in it
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework)]
         public static void X509CertificateCollectionAsIListBogusEntry()
         {
             using (X509Certificate2 c = new X509Certificate2())
@@ -859,6 +859,33 @@ namespace System.Security.Cryptography.X509Certificates.Tests
                 foreach (X509Certificate2 cert in collection)
                 {
                     cert.Dispose();
+                }
+            }
+        }
+
+        [Fact]
+        [ActiveIssue(26397, TestPlatforms.OSX)]
+        public static void CanAddMultipleCertsWithSinglePrivateKey()
+        {
+            using (var oneWithKey = new X509Certificate2(TestData.PfxData, TestData.PfxDataPassword, X509KeyStorageFlags.Exportable | Cert.EphemeralIfPossible))
+            using (var twoWithoutKey = new X509Certificate2(TestData.ComplexNameInfoCert))
+            {
+                Assert.True(oneWithKey.HasPrivateKey);
+
+                var col = new X509Certificate2Collection
+                {
+                    oneWithKey,
+                    twoWithoutKey,
+                };
+
+                Assert.Equal(1, col.Cast<X509Certificate2>().Count(x => x.HasPrivateKey));
+                Assert.Equal(2, col.Count);
+
+                byte[] buffer = col.Export(X509ContentType.Pfx);
+
+                using (ImportedCollection newCollection = Cert.Import(buffer))
+                {
+                    Assert.Equal(2, newCollection.Collection.Count);
                 }
             }
         }

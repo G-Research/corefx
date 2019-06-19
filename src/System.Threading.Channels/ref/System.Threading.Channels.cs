@@ -9,10 +9,10 @@ namespace System.Threading.Channels
 {
     public enum BoundedChannelFullMode
     {
+        Wait = 0,
         DropNewest = 1,
         DropOldest = 2,
         DropWrite = 3,
-        Wait = 0,
     }
     public sealed partial class BoundedChannelOptions : System.Threading.Channels.ChannelOptions
     {
@@ -26,8 +26,6 @@ namespace System.Threading.Channels
         public static System.Threading.Channels.Channel<T> CreateBounded<T>(System.Threading.Channels.BoundedChannelOptions options) { throw null; }
         public static System.Threading.Channels.Channel<T> CreateUnbounded<T>() { throw null; }
         public static System.Threading.Channels.Channel<T> CreateUnbounded<T>(System.Threading.Channels.UnboundedChannelOptions options) { throw null; }
-        public static System.Threading.Channels.Channel<T> CreateUnbuffered<T>() { throw null; }
-        public static System.Threading.Channels.Channel<T> CreateUnbuffered<T>(System.Threading.Channels.UnbufferedChannelOptions options) { throw null; }
     }
     public partial class ChannelClosedException : System.InvalidOperationException
     {
@@ -47,18 +45,18 @@ namespace System.Threading.Channels
     {
         protected ChannelReader() { }
         public virtual System.Threading.Tasks.Task Completion { get { throw null; } }
-        public virtual System.Threading.Tasks.ValueTask<T> ReadAsync(CancellationToken cancellationToken = default) { throw null; }
+        public virtual System.Threading.Tasks.ValueTask<T> ReadAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) { throw null; }
         public abstract bool TryRead(out T item);
-        public abstract System.Threading.Tasks.Task<bool> WaitToReadAsync(System.Threading.CancellationToken cancellationToken=default);
+        public abstract System.Threading.Tasks.ValueTask<bool> WaitToReadAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
     }
     public abstract partial class ChannelWriter<T>
     {
         protected ChannelWriter() { }
-        public void Complete(System.Exception error=null) { }
-        public virtual bool TryComplete(System.Exception error=null) { throw null; }
+        public void Complete(System.Exception error = null) { }
+        public virtual bool TryComplete(System.Exception error = null) { throw null; }
         public abstract bool TryWrite(T item);
-        public abstract System.Threading.Tasks.Task<bool> WaitToWriteAsync(System.Threading.CancellationToken cancellationToken=default);
-        public virtual System.Threading.Tasks.Task WriteAsync(T item, System.Threading.CancellationToken cancellationToken=default) { throw null; }
+        public abstract System.Threading.Tasks.ValueTask<bool> WaitToWriteAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        public virtual System.Threading.Tasks.ValueTask WriteAsync(T item, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) { throw null; }
     }
     public abstract partial class Channel<T> : System.Threading.Channels.Channel<T, T>
     {
@@ -75,9 +73,5 @@ namespace System.Threading.Channels
     public sealed partial class UnboundedChannelOptions : System.Threading.Channels.ChannelOptions
     {
         public UnboundedChannelOptions() { }
-    }
-    public sealed partial class UnbufferedChannelOptions : System.Threading.Channels.ChannelOptions
-    {
-        public UnbufferedChannelOptions() { }
     }
 }

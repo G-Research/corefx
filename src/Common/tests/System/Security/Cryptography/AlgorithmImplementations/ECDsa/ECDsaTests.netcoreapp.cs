@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Security.Cryptography.Tests;
 using Xunit;
 
 namespace System.Security.Cryptography.EcDsa.Tests
@@ -14,12 +15,21 @@ namespace System.Security.Cryptography.EcDsa.Tests
         protected override byte[] SignData(ECDsa ecdsa, byte[] data, int offset, int count, HashAlgorithmName hashAlgorithm) =>
             TryWithOutputArray(dest => ecdsa.TrySignData(new ReadOnlySpan<byte>(data, offset, count), dest, hashAlgorithm, out int bytesWritten) ? (true, bytesWritten) : (false, 0));
 
+        protected override void UseAfterDispose(ECDsa ecdsa, byte[] data, byte[] sig)
+        {
+            base.UseAfterDispose(ecdsa, data, sig);
+            byte[] hash = new byte[32];
+
+            Assert.Throws<ObjectDisposedException>(() => ecdsa.VerifyHash(hash.AsSpan(), sig.AsSpan()));
+            Assert.Throws<ObjectDisposedException>(() => ecdsa.TrySignHash(hash, sig, out _));
+        }
+
         [Theory, MemberData(nameof(RealImplementations))]
         public void SignData_InvalidArguments_Throws(ECDsa ecdsa)
         {
             AssertExtensions.Throws<ArgumentException>("hashAlgorithm", () => ecdsa.TrySignData(ReadOnlySpan<byte>.Empty, Span<byte>.Empty, new HashAlgorithmName(null), out int bytesWritten));
             AssertExtensions.Throws<ArgumentException>("hashAlgorithm", () => ecdsa.TrySignData(ReadOnlySpan<byte>.Empty, Span<byte>.Empty, new HashAlgorithmName(""), out int bytesWritten));
-            Assert.Throws<CryptographicException>(() => ecdsa.TrySignData(ReadOnlySpan<byte>.Empty, Span<byte>.Empty, new HashAlgorithmName(Guid.NewGuid().ToString("N")), out int bytesWritten));
+            Assert.ThrowsAny<CryptographicException>(() => ecdsa.TrySignData(ReadOnlySpan<byte>.Empty, Span<byte>.Empty, new HashAlgorithmName(Guid.NewGuid().ToString("N")), out int bytesWritten));
         }
 
         [Theory, MemberData(nameof(RealImplementations))]
@@ -27,7 +37,7 @@ namespace System.Security.Cryptography.EcDsa.Tests
         {
             AssertExtensions.Throws<ArgumentException>("hashAlgorithm", () => ecdsa.VerifyData(ReadOnlySpan<byte>.Empty, ReadOnlySpan<byte>.Empty, new HashAlgorithmName(null)));
             AssertExtensions.Throws<ArgumentException>("hashAlgorithm", () => ecdsa.VerifyData(ReadOnlySpan<byte>.Empty, ReadOnlySpan<byte>.Empty, new HashAlgorithmName("")));
-            Assert.Throws<CryptographicException>(() => ecdsa.VerifyData(ReadOnlySpan<byte>.Empty, Span<byte>.Empty, new HashAlgorithmName(Guid.NewGuid().ToString("N"))));
+            Assert.ThrowsAny<CryptographicException>(() => ecdsa.VerifyData(ReadOnlySpan<byte>.Empty, Span<byte>.Empty, new HashAlgorithmName(Guid.NewGuid().ToString("N"))));
         }
 
         private static byte[] TryWithOutputArray(Func<byte[], (bool, int)> func)
@@ -113,7 +123,7 @@ namespace System.Security.Cryptography.EcDsa.Tests
                             newEc.GenerateKey(ECCurve.NamedCurves.nistP256);
                             Assert.Equal(256, newEc.KeySize);
                             param2 = newEc.ExportExplicitParameters(true);
-                            // Keys should should not match
+                            // Keys should not match
                             ComparePrivateKey(param, param2, false);
                             ComparePublicKey(param.Q, param2.Q, false);
                             // P,X,Y (and others) should not match
@@ -135,7 +145,7 @@ namespace System.Security.Cryptography.EcDsa.Tests
                             newEc.GenerateKey(param2.Curve);
                             Assert.Equal(256, newEc.KeySize);
                             param2 = newEc.ExportExplicitParameters(true);
-                            // Keys should should not match
+                            // Keys should not match
                             ComparePrivateKey(param, param2, false);
                             ComparePublicKey(param.Q, param2.Q, false);
                             // P,X,Y (and others) should not match
@@ -155,7 +165,7 @@ namespace System.Security.Cryptography.EcDsa.Tests
                                 newEc.GenerateKey(ECCurve.CreateFromValue(ECDSA_Sect193r1_OID_VALUE));
                                 Assert.Equal(193, newEc.KeySize);
                                 param2 = newEc.ExportExplicitParameters(true);
-                                // Keys should should not match
+                                // Keys should not match
                                 ComparePrivateKey(param, param2, false);
                                 ComparePublicKey(param.Q, param2.Q, false);
                                 // Polynomial,X,Y (and others) should not match
@@ -247,7 +257,7 @@ namespace System.Security.Cryptography.EcDsa.Tests
         {
             using (ECDsa ecdsa = ECDsaFactory.Create())
             {
-                ecdsa.ImportParameters(ECDsaTestData.GetNistP256ExplicitTestData());
+                ecdsa.ImportParameters(EccTestData.GetNistP256ExplicitTestData());
                 Verify256(ecdsa, true);
             }
         }

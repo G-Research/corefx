@@ -6,22 +6,23 @@ using System;
 using System.Diagnostics;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 
 namespace System.Net.Tests
 {
-    public class ServicePointManagerTest : RemoteExecutorTestBase
+    public class ServicePointManagerTest
     {
         [Fact]
         public static void RequireEncryption_ExpectedDefault()
         {
-            RemoteInvoke(() => Assert.Equal(EncryptionPolicy.RequireEncryption, ServicePointManager.EncryptionPolicy));
+            RemoteExecutor.Invoke(() => Assert.Equal(EncryptionPolicy.RequireEncryption, ServicePointManager.EncryptionPolicy)).Dispose();
         }
 
         [Fact]
         public static void CheckCertificateRevocationList_Roundtrips()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 Assert.False(ServicePointManager.CheckCertificateRevocationList);
 
@@ -30,13 +31,13 @@ namespace System.Net.Tests
 
                 ServicePointManager.CheckCertificateRevocationList = false;
                 Assert.False(ServicePointManager.CheckCertificateRevocationList);
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void DefaultConnectionLimit_Roundtrips()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 Assert.Equal(2, ServicePointManager.DefaultConnectionLimit);
 
@@ -45,13 +46,13 @@ namespace System.Net.Tests
 
                 ServicePointManager.DefaultConnectionLimit = 2;
                 Assert.Equal(2, ServicePointManager.DefaultConnectionLimit);
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void DnsRefreshTimeout_Roundtrips()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 Assert.Equal(120000, ServicePointManager.DnsRefreshTimeout);
 
@@ -60,13 +61,13 @@ namespace System.Net.Tests
 
                 ServicePointManager.DnsRefreshTimeout = 120000;
                 Assert.Equal(120000, ServicePointManager.DnsRefreshTimeout);
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void EnableDnsRoundRobin_Roundtrips()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 Assert.False(ServicePointManager.EnableDnsRoundRobin);
 
@@ -75,13 +76,13 @@ namespace System.Net.Tests
 
                 ServicePointManager.EnableDnsRoundRobin = false;
                 Assert.False(ServicePointManager.EnableDnsRoundRobin);
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void Expect100Continue_Roundtrips()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 Assert.True(ServicePointManager.Expect100Continue);
 
@@ -90,13 +91,13 @@ namespace System.Net.Tests
 
                 ServicePointManager.Expect100Continue = true;
                 Assert.True(ServicePointManager.Expect100Continue);
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void MaxServicePointIdleTime_Roundtrips()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 Assert.Equal(100000, ServicePointManager.MaxServicePointIdleTime);
 
@@ -105,13 +106,13 @@ namespace System.Net.Tests
 
                 ServicePointManager.MaxServicePointIdleTime = 100000;
                 Assert.Equal(100000, ServicePointManager.MaxServicePointIdleTime);
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void MaxServicePoints_Roundtrips()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 Assert.Equal(0, ServicePointManager.MaxServicePoints);
 
@@ -120,13 +121,13 @@ namespace System.Net.Tests
 
                 ServicePointManager.MaxServicePoints = 0;
                 Assert.Equal(0, ServicePointManager.MaxServicePoints);
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void ReusePort_Roundtrips()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 Assert.False(ServicePointManager.ReusePort);
 
@@ -135,14 +136,13 @@ namespace System.Net.Tests
 
                 ServicePointManager.ReusePort = false;
                 Assert.False(ServicePointManager.ReusePort);
-            });
+            }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Desktop default SecurityProtocol to Ssl3; explicitly changed to SystemDefault for core.")]
         public static void SecurityProtocol_Roundtrips()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 var orig = (SecurityProtocolType)0; // SystemDefault.
                 Assert.Equal(orig, ServicePointManager.SecurityProtocol);
@@ -152,13 +152,13 @@ namespace System.Net.Tests
 
                 ServicePointManager.SecurityProtocol = orig;
                 Assert.Equal(orig, ServicePointManager.SecurityProtocol);
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void ServerCertificateValidationCallback_Roundtrips()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 Assert.Null(ServicePointManager.ServerCertificateValidationCallback);
 
@@ -168,13 +168,13 @@ namespace System.Net.Tests
 
                 ServicePointManager.ServerCertificateValidationCallback = null;
                 Assert.Null(ServicePointManager.ServerCertificateValidationCallback);
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void UseNagleAlgorithm_Roundtrips()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 Assert.True(ServicePointManager.UseNagleAlgorithm);
 
@@ -183,13 +183,13 @@ namespace System.Net.Tests
 
                 ServicePointManager.UseNagleAlgorithm = true;
                 Assert.True(ServicePointManager.UseNagleAlgorithm);
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void InvalidArguments_Throw()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 const int ssl2Client = 0x00000008;
                 const int ssl2Server = 0x00000004;
@@ -214,14 +214,13 @@ namespace System.Net.Tests
                 AssertExtensions.Throws<ArgumentOutOfRangeException>("value", () => sp.ReceiveBufferSize = -2);
                 AssertExtensions.Throws<ArgumentOutOfRangeException>("keepAliveTime", () => sp.SetTcpKeepAlive(true, -1, 1));
                 AssertExtensions.Throws<ArgumentOutOfRangeException>("keepAliveInterval", () => sp.SetTcpKeepAlive(true, 1, -1));
-            });
+            }).Dispose();
         }
 
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Ssl3 is supported by desktop but explicitly not by core")]
         [Fact]
         public static void SecurityProtocol_Ssl3_NotSupported()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 const int ssl2Client = 0x00000008;
                 const int ssl2Server = 0x00000004;
@@ -231,13 +230,13 @@ namespace System.Net.Tests
                 Assert.Throws<NotSupportedException>(() => ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3);
                 Assert.Throws<NotSupportedException>(() => ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | ssl2);
 #pragma warning restore
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void FindServicePoint_ReturnsCachedServicePoint()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 const string Localhost = "http://localhost";
                 string address1 = "http://" + Guid.NewGuid().ToString("N");
@@ -267,14 +266,13 @@ namespace System.Net.Tests
                 Assert.NotSame(
                     ServicePointManager.FindServicePoint(address1, new FixedWebProxy(address1)),
                     ServicePointManager.FindServicePoint(address1, new FixedWebProxy(address2)));
-            });
+            }).Dispose();
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "Desktop ServicePoint lifetime is slightly longer due to implementation details of real implementation")]
         public static void FindServicePoint_Collectible()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 string address = "http://" + Guid.NewGuid().ToString("N");
 
@@ -286,13 +284,13 @@ namespace System.Net.Tests
                 GC.Collect();
 
                 Assert.Equal(initial, GetExpect100Continue(address));
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void FindServicePoint_ReturnedServicePointMatchesExpectedValues()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 string address = "http://" + Guid.NewGuid().ToString("N");
 
@@ -313,13 +311,13 @@ namespace System.Net.Tests
                 Assert.Equal(-1, sp.ReceiveBufferSize);
                 Assert.True(sp.SupportsPipelining, "SupportsPipelining");
                 Assert.True(sp.UseNagleAlgorithm, "UseNagleAlgorithm");
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void FindServicePoint_PropertiesRoundtrip()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 string address = "http://" + Guid.NewGuid().ToString("N");
 
@@ -348,13 +346,13 @@ namespace System.Net.Tests
                 Assert.Equal(expectedMaxIdleTime, sp2.MaxIdleTime);
                 Assert.Equal(expectedReceiveBufferSize, sp2.ReceiveBufferSize);
                 Assert.Equal(expectedUseNagleAlgorithm, sp2.UseNagleAlgorithm);
-            });
+            }).Dispose();
         }
 
         [Fact]
         public static void FindServicePoint_NewServicePointsInheritCurrentValues()
         {
-            RemoteInvoke(() =>
+            RemoteExecutor.Invoke(() =>
             {
                 string address1 = "http://" + Guid.NewGuid().ToString("N");
                 string address2 = "http://" + Guid.NewGuid().ToString("N");
@@ -378,7 +376,7 @@ namespace System.Net.Tests
 
                 ServicePointManager.Expect100Continue = orig100Continue;
                 ServicePointManager.UseNagleAlgorithm = origNagle;
-            });
+            }).Dispose();
         }
 
         // Separated out to avoid the JIT in debug builds interfering with object lifetimes

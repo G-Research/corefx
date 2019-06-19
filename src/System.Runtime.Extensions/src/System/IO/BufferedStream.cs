@@ -2,11 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Diagnostics.Contracts;
 
 namespace System.IO
 {
@@ -51,23 +49,23 @@ namespace System.IO
         private const int MaxShadowBufferSize = 81920;  // Make sure not to get to the Large Object Heap.
         private const int DefaultBufferSize = 4096;
 
-        private Stream _stream;                             // Underlying stream.  Close sets _stream to null.
-        private byte[] _buffer;                             // Shared read/write buffer.  Alloc on first use.
+        private Stream? _stream;                            // Underlying stream.  Close sets _stream to null.
+        private byte[]? _buffer;                            // Shared read/write buffer.  Alloc on first use.
         private readonly int _bufferSize;                   // Length of internal buffer (not counting the shadow buffer).
         private int _readPos;                               // Read pointer within shared buffer.
         private int _readLen;                               // Number of bytes read in buffer from _stream.
         private int _writePos;                              // Write pointer within shared buffer.
-        private Task<int> _lastSyncCompletedReadTask;       // The last successful Task returned from ReadAsync
+        private Task<int>? _lastSyncCompletedReadTask;      // The last successful Task returned from ReadAsync
                                                             // (perf optimization for successive reads of the same size)
                                                             // Removing a private default constructor is a breaking change for the DataDebugSerializer.
                                                             // Because this ctor was here previously we need to keep it around.
-        private SemaphoreSlim _asyncActiveSemaphore;
+        private SemaphoreSlim? _asyncActiveSemaphore;
 
         internal SemaphoreSlim LazyEnsureAsyncActiveSemaphoreInitialized()
         {
             // Lazily-initialize _asyncActiveSemaphore.  As we're never accessing the SemaphoreSlim's
             // WaitHandle, we don't need to worry about Disposing it.
-            return LazyInitializer.EnsureInitialized(ref _asyncActiveSemaphore, () => new SemaphoreSlim(1, 1));
+            return LazyInitializer.EnsureInitialized<SemaphoreSlim>(ref _asyncActiveSemaphore!, () => new SemaphoreSlim(1, 1)); // TODO-NULLABLE: Remove ! when nullable attributes are respected
         }
 
         public BufferedStream(Stream stream)
@@ -151,7 +149,8 @@ namespace System.IO
         {
             get
             {
-                return _stream;
+                // _stream can be null when disposed. However we don't want to make UnderlyingStream nullable just for that scenario, since doing operations after dispose is invalid anyway.
+                return _stream!;
             }
         }
 
@@ -165,7 +164,6 @@ namespace System.IO
 
         public override bool CanRead
         {
-            [Pure]
             get
             {
                 return _stream != null && _stream.CanRead;
@@ -174,7 +172,6 @@ namespace System.IO
 
         public override bool CanWrite
         {
-            [Pure]
             get
             {
                 return _stream != null && _stream.CanWrite;
@@ -183,7 +180,6 @@ namespace System.IO
 
         public override bool CanSeek
         {
-            [Pure]
             get
             {
                 return _stream != null && _stream.CanSeek;
@@ -199,7 +195,7 @@ namespace System.IO
                 if (_writePos > 0)
                     FlushWrite();
 
-                return _stream.Length;
+                return _stream!.Length;
             }
         }
 
@@ -211,7 +207,7 @@ namespace System.IO
                 EnsureCanSeek();
 
                 Debug.Assert(!(_writePos > 0 && _readPos != _readLen), "Read and Write buffers cannot both have data in them at the same time.");
-                return _stream.Position + (_readPos - _readLen + _writePos);
+                return _stream!.Position + (_readPos - _readLen + _writePos);
             }
             set
             {
@@ -226,7 +222,7 @@ namespace System.IO
 
                 _readPos = 0;
                 _readLen = 0;
-                _stream.Seek(value, SeekOrigin.Begin);
+                _stream!.Seek(value, SeekOrigin.Begin);
             }
         }
 
@@ -256,6 +252,29 @@ namespace System.IO
             }
         }
 
+        public override async ValueTask DisposeAsync()
+        {
+            try
+            {
+                if (_stream != null)
+                {
+                    try
+                    {
+                        await FlushAsync().ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        await _stream.DisposeAsync().ConfigureAwait(false);
+                    }
+                }
+            }
+            finally
+            {
+                _stream = null;
+                _buffer = null;
+            }
+        }
+
         public override void Flush()
         {
             EnsureNotClosed();
@@ -274,7 +293,7 @@ namespace System.IO
                 // If the underlying stream is not seekable AND we have something in the read buffer, then FlushRead would throw.
                 // We can either throw away the buffer resulting in data loss (!) or ignore the Flush.
                 // (We cannot throw because it would be a breaking change.) We opt into ignoring the Flush in that situation.
-                if (_stream.CanSeek)
+                if (_stream!.CanSeek)
                 {
                     FlushRead();
                 }
@@ -291,7 +310,7 @@ namespace System.IO
             }
 
             // We had no data in the buffer, but we still need to tell the underlying stream to flush.
-            if (_stream.CanWrite)
+            if (_stream!.CanWrite)
                 _stream.Flush();
 
             _writePos = _readPos = _readLen = 0;
@@ -362,6 +381,7 @@ namespace System.IO
         // All write functions should call this function to ensure that the buffered data is not lost.
         private void FlushRead()
         {
+            Debug.Assert(_stream != null);
             Debug.Assert(_writePos == 0, "BufferedStream: Write buffer must be empty in FlushRead!");
 
             if (_readPos - _readLen != 0)
@@ -376,6 +396,7 @@ namespace System.IO
         /// </summary>
         private void ClearReadBufferBeforeWrite()
         {
+            Debug.Assert(_stream != null);
             Debug.Assert(_readPos <= _readLen, "_readPos <= _readLen [" + _readPos + " <= " + _readLen + "]");
 
             // No read data in the buffer:
@@ -399,6 +420,7 @@ namespace System.IO
 
         private void FlushWrite()
         {
+            Debug.Assert(_stream != null);
             Debug.Assert(_readPos == 0 && _readLen == 0,
                             "BufferedStream: Read buffer must be empty in FlushWrite!");
             Debug.Assert(_buffer != null && _bufferSize >= _writePos,
@@ -411,13 +433,13 @@ namespace System.IO
 
         private async Task FlushWriteAsync(CancellationToken cancellationToken)
         {
-
+            Debug.Assert(_stream != null);
             Debug.Assert(_readPos == 0 && _readLen == 0,
                             "BufferedStream: Read buffer must be empty in FlushWrite!");
             Debug.Assert(_buffer != null && _bufferSize >= _writePos,
                             "BufferedStream: Write buffer must be allocated and write position must be in the bounds of the buffer in FlushWrite!");
 
-            await _stream.WriteAsync(_buffer, 0, _writePos, cancellationToken).ConfigureAwait(false);
+            await _stream.WriteAsync(new ReadOnlyMemory<byte>(_buffer, 0, _writePos), cancellationToken).ConfigureAwait(false);
             _writePos = 0;
             await _stream.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -432,7 +454,7 @@ namespace System.IO
 
             if (readbytes > count)
                 readbytes = count;
-            Buffer.BlockCopy(_buffer, _readPos, array, offset, readbytes);
+            Buffer.BlockCopy(_buffer!, _readPos, array, offset, readbytes);
             _readPos += readbytes;
 
             return readbytes;
@@ -444,14 +466,13 @@ namespace System.IO
             Debug.Assert(readbytes >= 0);
             if (readbytes > 0)
             {
-                bool copied = new Span<byte>(_buffer, _readPos, readbytes).TryCopyTo(destination);
-                Debug.Assert(copied);
+                new ReadOnlySpan<byte>(_buffer, _readPos, readbytes).CopyTo(destination);
                 _readPos += readbytes;
             }
             return readbytes;
         }
 
-        private int ReadFromBuffer(Byte[] array, int offset, int count, out Exception error)
+        private int ReadFromBuffer(byte[] array, int offset, int count, out Exception? error)
         {
             try
             {
@@ -478,6 +499,7 @@ namespace System.IO
 
             EnsureNotClosed();
             EnsureCanRead();
+            Debug.Assert(_stream != null);
 
             int bytesFromBuffer = ReadFromBuffer(array, offset, count);
 
@@ -515,7 +537,7 @@ namespace System.IO
 
             // Ok. We can fill the buffer:
             EnsureBufferAllocated();
-            _readLen = _stream.Read(_buffer, 0, _bufferSize);
+            _readLen = _stream.Read(_buffer!, 0, _bufferSize);
 
             bytesFromBuffer = ReadFromBuffer(array, offset, count);
 
@@ -533,6 +555,7 @@ namespace System.IO
         {
             EnsureNotClosed();
             EnsureCanRead();
+            Debug.Assert(_stream != null);
 
             // Try to read from the buffer.
             int bytesFromBuffer = ReadFromBuffer(destination);
@@ -569,14 +592,14 @@ namespace System.IO
             {
                 // Otherwise, fill the buffer, then read from that.
                 EnsureBufferAllocated();
-                _readLen = _stream.Read(_buffer, 0, _bufferSize);
+                _readLen = _stream.Read(_buffer!, 0, _bufferSize);
                 return ReadFromBuffer(destination) + bytesFromBuffer;
             }
         }
 
         private Task<int> LastSyncCompletedReadTask(int val)
         {
-            Task<int> t = _lastSyncCompletedReadTask;
+            Task<int>? t = _lastSyncCompletedReadTask;
             Debug.Assert(t == null || t.IsCompletedSuccessfully);
 
             if (t != null && t.Result == val)
@@ -616,7 +639,7 @@ namespace System.IO
                 bool completeSynchronously = true;
                 try
                 {
-                    Exception error;
+                    Exception? error;
                     bytesFromBuffer = ReadFromBuffer(buffer, offset, count, out error);
 
                     // If we satisfied enough data from the buffer, we can complete synchronously.
@@ -649,7 +672,7 @@ namespace System.IO
                 cancellationToken, bytesFromBuffer, semaphoreLockTask).AsTask();
         }
 
-        public override ValueTask<int> ReadAsync(Memory<byte> destination, CancellationToken cancellationToken = default(CancellationToken))
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -667,8 +690,8 @@ namespace System.IO
                 bool completeSynchronously = true;
                 try
                 {
-                    bytesFromBuffer = ReadFromBuffer(destination.Span);
-                    completeSynchronously = bytesFromBuffer == destination.Length;
+                    bytesFromBuffer = ReadFromBuffer(buffer.Span);
+                    completeSynchronously = bytesFromBuffer == buffer.Length;
                     if (completeSynchronously)
                     {
                         // If we satisfied enough data from the buffer, we can complete synchronously.
@@ -685,7 +708,7 @@ namespace System.IO
             }
 
             // Delegate to the async implementation.
-            return ReadFromUnderlyingStreamAsync(destination.Slice(bytesFromBuffer), cancellationToken, bytesFromBuffer, semaphoreLockTask);
+            return ReadFromUnderlyingStreamAsync(buffer.Slice(bytesFromBuffer), cancellationToken, bytesFromBuffer, semaphoreLockTask);
         }
 
         /// <summary>BufferedStream should be as thin a wrapper as possible. We want ReadAsync to delegate to
@@ -736,7 +759,7 @@ namespace System.IO
 
                 // Ok. We can fill the buffer:
                 EnsureBufferAllocated();
-                _readLen = await _stream.ReadAsync(_buffer, 0, _bufferSize, cancellationToken).ConfigureAwait(false);
+                _readLen = await _stream.ReadAsync(new Memory<byte>(_buffer, 0, _bufferSize), cancellationToken).ConfigureAwait(false);
 
                 bytesFromBuffer = ReadFromBuffer(buffer.Span);
                 return bytesAlreadySatisfied + bytesFromBuffer;
@@ -748,7 +771,7 @@ namespace System.IO
             }
         }
 
-        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state) =>
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object? state) =>
             TaskToApm.Begin(ReadAsync(buffer, offset, count, CancellationToken.None), callback, state);
 
         public override int EndRead(IAsyncResult asyncResult) =>
@@ -757,7 +780,7 @@ namespace System.IO
         public override int ReadByte()
         {
             return _readPos != _readLen ?
-                _buffer[_readPos++] :
+                _buffer![_readPos++] :
                 ReadByteSlow();
         }
 
@@ -772,18 +795,19 @@ namespace System.IO
             // the stream is closed, its read buffer is flushed, so we'll take this slow path.
             EnsureNotClosed();
             EnsureCanRead();
+            Debug.Assert(_stream != null);
 
             if (_writePos > 0)
                 FlushWrite();
 
             EnsureBufferAllocated();
-            _readLen = _stream.Read(_buffer, 0, _bufferSize);
+            _readLen = _stream.Read(_buffer!, 0, _bufferSize);
             _readPos = 0;
 
             if (_readLen == 0)
                 return -1;
 
-            return _buffer[_readPos++];
+            return _buffer![_readPos++];
         }
 
         private void WriteToBuffer(byte[] array, ref int offset, ref int count)
@@ -794,26 +818,26 @@ namespace System.IO
                 return;
 
             EnsureBufferAllocated();
-            Buffer.BlockCopy(array, offset, _buffer, _writePos, bytesToWrite);
+            Buffer.BlockCopy(array, offset, _buffer!, _writePos, bytesToWrite);
 
             _writePos += bytesToWrite;
             count -= bytesToWrite;
             offset += bytesToWrite;
         }
 
-        private int WriteToBuffer(ReadOnlySpan<byte> source)
+        private int WriteToBuffer(ReadOnlySpan<byte> buffer)
         {
-            int bytesToWrite = Math.Min(_bufferSize - _writePos, source.Length);
+            int bytesToWrite = Math.Min(_bufferSize - _writePos, buffer.Length);
             if (bytesToWrite > 0)
             {
                 EnsureBufferAllocated();
-                source.Slice(0, bytesToWrite).CopyTo(new Span<byte>(_buffer, _writePos, bytesToWrite));
+                buffer.Slice(0, bytesToWrite).CopyTo(new Span<byte>(_buffer, _writePos, bytesToWrite));
                 _writePos += bytesToWrite;
             }
             return bytesToWrite;
         }
 
-        private void WriteToBuffer(byte[] array, ref int offset, ref int count, out Exception error)
+        private void WriteToBuffer(byte[] array, ref int offset, ref int count, out Exception? error)
         {
             try
             {
@@ -839,6 +863,7 @@ namespace System.IO
 
             EnsureNotClosed();
             EnsureCanWrite();
+            Debug.Assert(_stream != null);
 
             if (_writePos == 0)
                 ClearReadBufferBeforeWrite();
@@ -962,10 +987,11 @@ namespace System.IO
             }
         }
 
-        public override void Write(ReadOnlySpan<byte> source)
+        public override void Write(ReadOnlySpan<byte> buffer)
         {
             EnsureNotClosed();
             EnsureCanWrite();
+            Debug.Assert(_stream != null);
 
             if (_writePos == 0)
             {
@@ -978,21 +1004,21 @@ namespace System.IO
             checked
             {
                 // We do not expect buffer sizes big enough for an overflow, but if it happens, lets fail early:
-                totalUserbytes = _writePos + source.Length;
-                useBuffer = (totalUserbytes + source.Length < (_bufferSize + _bufferSize));
+                totalUserbytes = _writePos + buffer.Length;
+                useBuffer = (totalUserbytes + buffer.Length < (_bufferSize + _bufferSize));
             }
 
             if (useBuffer)
             {
                 // Copy as much data to the buffer as will fit.  If there's still room in the buffer,
                 // everything must have fit.
-                int bytesWritten = WriteToBuffer(source);
+                int bytesWritten = WriteToBuffer(buffer);
                 if (_writePos < _bufferSize)
                 {
-                    Debug.Assert(bytesWritten == source.Length);
+                    Debug.Assert(bytesWritten == buffer.Length);
                     return;
                 }
-                source = source.Slice(bytesWritten);
+                buffer = buffer.Slice(bytesWritten);
 
                 Debug.Assert(_writePos == _bufferSize);
                 Debug.Assert(_buffer != null);
@@ -1002,8 +1028,8 @@ namespace System.IO
                 _writePos = 0;
 
                 // Now write the remainder.  It must fit, as we're only on this path if that's true.
-                bytesWritten = WriteToBuffer(source);
-                Debug.Assert(bytesWritten == source.Length);
+                bytesWritten = WriteToBuffer(buffer);
+                Debug.Assert(bytesWritten == buffer.Length);
 
                 Debug.Assert(_writePos < _bufferSize);
             }
@@ -1019,7 +1045,7 @@ namespace System.IO
                     if (totalUserbytes <= (_bufferSize + _bufferSize) && totalUserbytes <= MaxShadowBufferSize)
                     {
                         EnsureShadowBufferAllocated();
-                        source.CopyTo(new Span<byte>(_buffer, _writePos, source.Length));
+                        buffer.CopyTo(new Span<byte>(_buffer, _writePos, buffer.Length));
                         _stream.Write(_buffer, 0, totalUserbytes);
                         _writePos = 0;
                         return;
@@ -1030,7 +1056,7 @@ namespace System.IO
                 }
 
                 // Write out user data.
-                _stream.Write(source);
+                _stream.Write(buffer);
             }
         }
 
@@ -1045,15 +1071,15 @@ namespace System.IO
             if (buffer.Length - offset < count)
                 throw new ArgumentException(SR.Argument_InvalidOffLen);
 
-            return WriteAsync(new ReadOnlyMemory<byte>(buffer, offset, count), cancellationToken);
+            return WriteAsync(new ReadOnlyMemory<byte>(buffer, offset, count), cancellationToken).AsTask();
         }
 
-        public override Task WriteAsync(ReadOnlyMemory<byte> source, CancellationToken cancellationToken = default(CancellationToken))
+        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default(CancellationToken))
         {
             // Fast path check for cancellation already requested
             if (cancellationToken.IsCancellationRequested)
             {
-                return Task.FromCanceled<int>(cancellationToken);
+                return new ValueTask(Task.FromCanceled<int>(cancellationToken));
             }
 
             EnsureNotClosed();
@@ -1075,12 +1101,12 @@ namespace System.IO
                     Debug.Assert(_writePos < _bufferSize);
 
                     // If the write completely fits into the buffer, we can complete synchronously:
-                    completeSynchronously = source.Length < _bufferSize - _writePos;
+                    completeSynchronously = buffer.Length < _bufferSize - _writePos;
                     if (completeSynchronously)
                     {
-                        int bytesWritten = WriteToBuffer(source.Span);
-                        Debug.Assert(bytesWritten == source.Length);
-                        return Task.CompletedTask;
+                        int bytesWritten = WriteToBuffer(buffer.Span);
+                        Debug.Assert(bytesWritten == buffer.Length);
+                        return default;
                     }
                 }
                 finally
@@ -1091,7 +1117,7 @@ namespace System.IO
             }
 
             // Delegate to the async implementation.
-            return WriteToUnderlyingStreamAsync(source, cancellationToken, semaphoreLockTask);
+            return new ValueTask(WriteToUnderlyingStreamAsync(buffer, cancellationToken, semaphoreLockTask));
         }
 
         /// <summary>BufferedStream should be as thin a wrapper as possible. We want WriteAsync to delegate to
@@ -1100,7 +1126,7 @@ namespace System.IO
         /// little as possible.
         /// </summary>
         private async Task WriteToUnderlyingStreamAsync(
-            ReadOnlyMemory<byte> source, CancellationToken cancellationToken, Task semaphoreLockTask)
+            ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken, Task semaphoreLockTask)
         {
             Debug.Assert(_stream != null);
             Debug.Assert(_stream.CanWrite);
@@ -1123,29 +1149,29 @@ namespace System.IO
                 checked
                 {
                     // We do not expect buffer sizes big enough for an overflow, but if it happens, lets fail early:
-                    totalUserBytes = _writePos + source.Length;
-                    useBuffer = (totalUserBytes + source.Length < (_bufferSize + _bufferSize));
+                    totalUserBytes = _writePos + buffer.Length;
+                    useBuffer = (totalUserBytes + buffer.Length < (_bufferSize + _bufferSize));
                 }
 
                 if (useBuffer)
                 {
-                    source = source.Slice(WriteToBuffer(source.Span));
+                    buffer = buffer.Slice(WriteToBuffer(buffer.Span));
 
                     if (_writePos < _bufferSize)
                     {
-                        Debug.Assert(source.Length == 0);
+                        Debug.Assert(buffer.Length == 0);
                         return;
                     }
 
-                    Debug.Assert(source.Length >= 0);
+                    Debug.Assert(buffer.Length >= 0);
                     Debug.Assert(_writePos == _bufferSize);
                     Debug.Assert(_buffer != null);
                    
-                    await _stream.WriteAsync(_buffer, 0, _writePos, cancellationToken).ConfigureAwait(false);
+                    await _stream.WriteAsync(new ReadOnlyMemory<byte>(_buffer, 0, _writePos), cancellationToken).ConfigureAwait(false);
                     _writePos = 0;
 
-                    int bytesWritten = WriteToBuffer(source.Span);
-                    Debug.Assert(bytesWritten == source.Length);
+                    int bytesWritten = WriteToBuffer(buffer.Span);
+                    Debug.Assert(bytesWritten == buffer.Length);
 
                     Debug.Assert(_writePos < _bufferSize);
 
@@ -1162,19 +1188,19 @@ namespace System.IO
                         if (totalUserBytes <= (_bufferSize + _bufferSize) && totalUserBytes <= MaxShadowBufferSize)
                         {
                             EnsureShadowBufferAllocated();
-                            source.Span.CopyTo(new Span<byte>(_buffer, _writePos, source.Length));
+                            buffer.Span.CopyTo(new Span<byte>(_buffer, _writePos, buffer.Length));
 
-                            await _stream.WriteAsync(_buffer, 0, totalUserBytes, cancellationToken).ConfigureAwait(false);
+                            await _stream.WriteAsync(new ReadOnlyMemory<byte>(_buffer, 0, totalUserBytes), cancellationToken).ConfigureAwait(false);
                             _writePos = 0;
                             return;
                         }
 
-                        await _stream.WriteAsync(_buffer, 0, _writePos, cancellationToken).ConfigureAwait(false);
+                        await _stream.WriteAsync(new ReadOnlyMemory<byte>(_buffer, 0, _writePos), cancellationToken).ConfigureAwait(false);
                         _writePos = 0;
                     }
 
                     // Write out user data.
-                    await _stream.WriteAsync(source, cancellationToken).ConfigureAwait(false);
+                    await _stream.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
                 }
             }
             finally
@@ -1184,7 +1210,7 @@ namespace System.IO
             }
         }
 
-        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state) =>
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object? state) =>
             TaskToApm.Begin(WriteAsync(buffer, offset, count, CancellationToken.None), callback, state);
 
         public override void EndWrite(IAsyncResult asyncResult) =>
@@ -1205,7 +1231,7 @@ namespace System.IO
             if (_writePos >= _bufferSize - 1)
                 FlushWrite();
 
-            _buffer[_writePos++] = value;
+            _buffer![_writePos++] = value;
 
             Debug.Assert(_writePos < _bufferSize);
         }
@@ -1214,6 +1240,7 @@ namespace System.IO
         {
             EnsureNotClosed();
             EnsureCanSeek();
+            Debug.Assert(_stream != null);
 
             // If we have bytes in the write buffer, flush them out, seek and be done.
             if (_writePos > 0)
@@ -1267,6 +1294,7 @@ namespace System.IO
             EnsureNotClosed();
             EnsureCanSeek();
             EnsureCanWrite();
+            Debug.Assert(_stream != null);
 
             Flush();
             _stream.SetLength(value);
@@ -1275,6 +1303,7 @@ namespace System.IO
         public override void CopyTo(Stream destination, int bufferSize)
         {
             StreamHelpers.ValidateCopyToArgs(this, destination, bufferSize);
+            Debug.Assert(_stream != null);
 
             int readBytes = _readLen - _readPos;
             Debug.Assert(readBytes >= 0, $"Expected a non-negative number of bytes in buffer, got {readBytes}");
@@ -1283,7 +1312,7 @@ namespace System.IO
             {
                 // If there's any read data in the buffer, write it all to the destination stream.
                 Debug.Assert(_writePos == 0, "Write buffer must be empty if there's data in the read buffer");
-                destination.Write(_buffer, _readPos, readBytes);
+                destination.Write(_buffer!, _readPos, readBytes);
                 _readPos = _readLen = 0;
             }
             else if (_writePos > 0)
@@ -1306,6 +1335,8 @@ namespace System.IO
 
         private async Task CopyToAsyncCore(Stream destination, int bufferSize, CancellationToken cancellationToken)
         {
+            Debug.Assert(_stream != null);
+
             // Synchronize async operations as does Read/WriteAsync.
             await LazyEnsureAsyncActiveSemaphoreInitialized().WaitAsync().ConfigureAwait(false);
             try
@@ -1317,7 +1348,7 @@ namespace System.IO
                 {
                     // If there's any read data in the buffer, write it all to the destination stream.
                     Debug.Assert(_writePos == 0, "Write buffer must be empty if there's data in the read buffer");
-                    await destination.WriteAsync(_buffer, _readPos, readBytes, cancellationToken).ConfigureAwait(false);
+                    await destination.WriteAsync(new ReadOnlyMemory<byte>(_buffer, _readPos, readBytes), cancellationToken).ConfigureAwait(false);
                     _readPos = _readLen = 0;
                 }
                 else if (_writePos > 0)
@@ -1329,7 +1360,7 @@ namespace System.IO
                 // Our buffer is now clear. Copy data directly from the source stream to the destination stream.
                 await _stream.CopyToAsync(destination, bufferSize, cancellationToken).ConfigureAwait(false);
             }
-            finally { _asyncActiveSemaphore.Release(); }
+            finally { _asyncActiveSemaphore!.Release(); }
         }
     }  // class BufferedStream
 }  // namespace

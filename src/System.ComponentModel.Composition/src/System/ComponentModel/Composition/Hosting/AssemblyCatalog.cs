@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition.Primitives;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using Microsoft.Internal;
@@ -49,7 +49,7 @@ namespace System.ComponentModel.Composition.Hosting
         /// <exception cref="PathTooLongException">
         ///     The specified path, file name, or both exceed the system-defined maximum length. 
         /// </exception>
-        /// <exception cref="SecurityException">
+        /// <exception cref="System.Security.SecurityException">
         ///     The caller does not have path discovery permission. 
         /// </exception>
         /// <exception cref="FileNotFoundException">
@@ -73,7 +73,7 @@ namespace System.ComponentModel.Composition.Hosting
         /// </remarks>
         public AssemblyCatalog(string codeBase)
         {
-            Requires.NotNullOrEmpty(codeBase, "codeBase");
+            Requires.NotNullOrEmpty(codeBase, nameof(codeBase));
 
             InitializeAssemblyCatalog(LoadAssembly(codeBase));
             _definitionOrigin = this;
@@ -105,7 +105,7 @@ namespace System.ComponentModel.Composition.Hosting
         /// <exception cref="PathTooLongException">
         ///     The specified path, file name, or both exceed the system-defined maximum length. 
         /// </exception>
-        /// <exception cref="SecurityException">
+        /// <exception cref="System.Security.SecurityException">
         ///     The caller does not have path discovery permission. 
         /// </exception>
         /// <exception cref="FileNotFoundException">
@@ -129,8 +129,8 @@ namespace System.ComponentModel.Composition.Hosting
         /// </remarks>
         public AssemblyCatalog(string codeBase, ReflectionContext reflectionContext)
         {
-            Requires.NotNullOrEmpty(codeBase, "codeBase");
-            Requires.NotNull(reflectionContext, "reflectionContext");
+            Requires.NotNullOrEmpty(codeBase, nameof(codeBase));
+            Requires.NotNull(reflectionContext, nameof(reflectionContext));
 
             InitializeAssemblyCatalog(LoadAssembly(codeBase));
             _reflectionContext = reflectionContext;
@@ -162,7 +162,7 @@ namespace System.ComponentModel.Composition.Hosting
         /// <exception cref="PathTooLongException">
         ///     The specified path, file name, or both exceed the system-defined maximum length. 
         /// </exception>
-        /// <exception cref="SecurityException">
+        /// <exception cref="System.Security.SecurityException">
         ///     The caller does not have path discovery permission. 
         /// </exception>
         /// <exception cref="FileNotFoundException">
@@ -186,7 +186,7 @@ namespace System.ComponentModel.Composition.Hosting
         /// </remarks>
         public AssemblyCatalog(string codeBase, ICompositionElement definitionOrigin)
         {
-            Requires.NotNullOrEmpty(codeBase, "codeBase");
+            Requires.NotNullOrEmpty(codeBase, nameof(codeBase));
             Requires.NotNull(definitionOrigin, nameof(definitionOrigin));
 
             InitializeAssemblyCatalog(LoadAssembly(codeBase));
@@ -226,7 +226,7 @@ namespace System.ComponentModel.Composition.Hosting
         /// <exception cref="PathTooLongException">
         ///     The specified path, file name, or both exceed the system-defined maximum length. 
         /// </exception>
-        /// <exception cref="SecurityException">
+        /// <exception cref="System.Security.SecurityException">
         ///     The caller does not have path discovery permission. 
         /// </exception>
         /// <exception cref="FileNotFoundException">
@@ -250,9 +250,9 @@ namespace System.ComponentModel.Composition.Hosting
         /// </remarks>
         public AssemblyCatalog(string codeBase, ReflectionContext reflectionContext, ICompositionElement definitionOrigin)
         {
-            Requires.NotNullOrEmpty(codeBase, "codeBase");
-            Requires.NotNull(reflectionContext, "reflectionContext");
-            Requires.NotNull(definitionOrigin, "definitionOrigin");
+            Requires.NotNullOrEmpty(codeBase, nameof(codeBase));
+            Requires.NotNull(reflectionContext, nameof(reflectionContext));
+            Requires.NotNull(definitionOrigin, nameof(definitionOrigin));
 
             InitializeAssemblyCatalog(LoadAssembly(codeBase));
             _reflectionContext = reflectionContext;
@@ -284,8 +284,8 @@ namespace System.ComponentModel.Composition.Hosting
         /// </exception>
         public AssemblyCatalog(Assembly assembly, ReflectionContext reflectionContext)
         {
-            Requires.NotNull(assembly, "assembly");
-            Requires.NotNull(reflectionContext, "reflectionContext");
+            Requires.NotNull(assembly, nameof(assembly));
+            Requires.NotNull(reflectionContext, nameof(reflectionContext));
 
             InitializeAssemblyCatalog(assembly);
             _reflectionContext = reflectionContext;
@@ -324,9 +324,9 @@ namespace System.ComponentModel.Composition.Hosting
         /// </exception>
         public AssemblyCatalog(Assembly assembly, ReflectionContext reflectionContext, ICompositionElement definitionOrigin)
         {
-            Requires.NotNull(assembly, "assembly");
-            Requires.NotNull(reflectionContext, "reflectionContext");
-            Requires.NotNull(definitionOrigin, "definitionOrigin");
+            Requires.NotNull(assembly, nameof(assembly));
+            Requires.NotNull(reflectionContext, nameof(reflectionContext));
+            Requires.NotNull(definitionOrigin, nameof(definitionOrigin));
 
             InitializeAssemblyCatalog(assembly);
             _reflectionContext = reflectionContext;
@@ -391,7 +391,7 @@ namespace System.ComponentModel.Composition.Hosting
         {
             if (assembly.ReflectionOnly)
             {
-                throw new ArgumentException(string.Format(CultureInfo.CurrentCulture, SR.Argument_AssemblyReflectionOnly, "assembly"), "assembly");
+                throw new ArgumentException(SR.Format(SR.Argument_AssemblyReflectionOnly, nameof(assembly)), nameof(assembly));
             }
             _assembly = assembly;
         }
@@ -467,7 +467,7 @@ namespace System.ComponentModel.Composition.Hosting
         {
             get
             {
-                Contract.Ensures(Contract.Result<Assembly>() != null);
+                Debug.Assert(_assembly != null);
 
                 return _assembly;
             }
@@ -552,7 +552,7 @@ namespace System.ComponentModel.Composition.Hosting
 
         private static Assembly LoadAssembly(string codeBase)
         {
-            Requires.NotNullOrEmpty(codeBase, "codeBase");
+            Requires.NotNullOrEmpty(codeBase, nameof(codeBase));
 
             AssemblyName assemblyName;
 
@@ -566,7 +566,15 @@ namespace System.ComponentModel.Composition.Hosting
                 assemblyName.CodeBase = codeBase;
             }
 
-            return Assembly.Load(assemblyName);
+            try
+            {
+                return Assembly.Load(assemblyName);
+            }
+            //fallback attempt issue https://github.com/dotnet/corefx/issues/27433
+            catch (FileNotFoundException)
+            {
+                return Assembly.LoadFrom(codeBase);
+            }
         }
     }
 }

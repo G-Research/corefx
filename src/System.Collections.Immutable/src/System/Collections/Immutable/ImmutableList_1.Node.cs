@@ -69,8 +69,8 @@ namespace System.Collections.Immutable
             /// </summary>
             private Node()
             {
-                Contract.Ensures(this.IsEmpty);
                 _frozen = true; // the empty node is *always* frozen.
+                Debug.Assert(this.IsEmpty);
             }
 
             /// <summary>
@@ -86,7 +86,6 @@ namespace System.Collections.Immutable
                 Requires.NotNull(left, nameof(left));
                 Requires.NotNull(right, nameof(right));
                 Debug.Assert(!frozen || (left._frozen && right._frozen));
-                Contract.Ensures(!this.IsEmpty);
 
                 _key = key;
                 _left = left;
@@ -94,6 +93,8 @@ namespace System.Collections.Immutable
                 _height = ParentHeight(left, right);
                 _count = ParentCount(left, right);
                 _frozen = frozen;
+
+                Debug.Assert(!this.IsEmpty);
             }
 
             /// <summary>
@@ -106,7 +107,6 @@ namespace System.Collections.Immutable
             {
                 get
                 {
-                    Contract.Ensures(Contract.Result<bool>() == (_left == null));
                     Debug.Assert(!(_left == null ^ _right == null));
                     return _left == null;
                 }
@@ -186,6 +186,30 @@ namespace System.Collections.Immutable
                     return _key;
                 }
             }
+
+#if !NETSTANDARD10
+            /// <summary>
+            /// Gets a read-only reference to the element of the set at the given index.
+            /// </summary>
+            /// <param name="index">The 0-based index of the element in the set to return.</param>
+            /// <returns>A read-only reference to the element at the given position.</returns>
+            internal ref readonly T ItemRef(int index)
+            {
+                Requires.Range(index >= 0 && index < this.Count, nameof(index));
+
+                if (index < _left._count)
+                {
+                    return ref _left.ItemRef(index);
+                }
+
+                if (index > _left._count)
+                {
+                    return ref _right.ItemRef(index - _left._count - 1);
+                }
+
+                return ref _key;
+            }
+#endif
 
             #region IEnumerable<T> Members
 
@@ -417,7 +441,6 @@ namespace System.Collections.Immutable
             internal Node RemoveAll(Predicate<T> match)
             {
                 Requires.NotNull(match, nameof(match));
-                Contract.Ensures(Contract.Result<Node>() != null);
 
                 var result = this;
                 var enumerator = new Enumerator(result);
@@ -443,6 +466,7 @@ namespace System.Collections.Immutable
                     enumerator.Dispose();
                 }
 
+                Debug.Assert(result != null);
                 return result;
             }
 
@@ -500,8 +524,13 @@ namespace System.Collections.Immutable
                 int end = index + count - 1;
                 while (start < end)
                 {
+#if !NETSTANDARD10
+                    T a = result.ItemRef(start);
+                    T b = result.ItemRef(end);
+#else
                     T a = result[start];
                     T b = result[end];
+#endif
                     result = result
                         .ReplaceAt(end, a)
                         .ReplaceAt(start, b);
@@ -529,7 +558,6 @@ namespace System.Collections.Immutable
             internal Node Sort(Comparison<T> comparison)
             {
                 Requires.NotNull(comparison, nameof(comparison));
-                Contract.Ensures(Contract.Result<Node>() != null);
 
                 // PERF: Eventually this might be reimplemented in a way that does not require allocating an array.
                 var array = new T[this.Count];
@@ -989,7 +1017,6 @@ namespace System.Collections.Immutable
             internal ImmutableList<T> FindAll(Predicate<T> match)
             {
                 Requires.NotNull(match, nameof(match));
-                Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
 
                 if (this.IsEmpty)
                 {
@@ -1031,7 +1058,6 @@ namespace System.Collections.Immutable
             internal int FindIndex(Predicate<T> match)
             {
                 Requires.NotNull(match, nameof(match));
-                Contract.Ensures(Contract.Result<int>() >= -1);
 
                 return this.FindIndex(0, _count, match);
             }
@@ -1139,7 +1165,6 @@ namespace System.Collections.Immutable
             internal int FindLastIndex(Predicate<T> match)
             {
                 Requires.NotNull(match, nameof(match));
-                Contract.Ensures(Contract.Result<int>() >= -1);
 
                 return this.IsEmpty ? -1 : this.FindLastIndex(this.Count - 1, this.Count, match);
             }
@@ -1230,7 +1255,6 @@ namespace System.Collections.Immutable
             {
                 Debug.Assert(!this.IsEmpty);
                 Debug.Assert(!_right.IsEmpty);
-                Contract.Ensures(Contract.Result<Node>() != null);
 
                 return _right.MutateLeft(this.MutateRight(_right._left));
             }
@@ -1243,7 +1267,6 @@ namespace System.Collections.Immutable
             {
                 Debug.Assert(!this.IsEmpty);
                 Debug.Assert(!_left.IsEmpty);
-                Contract.Ensures(Contract.Result<Node>() != null);
 
                 return _left.MutateRight(this.MutateLeft(_left._right));
             }
@@ -1257,7 +1280,6 @@ namespace System.Collections.Immutable
                 Debug.Assert(!this.IsEmpty);
                 Debug.Assert(!_right.IsEmpty);
                 Debug.Assert(!_right._left.IsEmpty);
-                Contract.Ensures(Contract.Result<Node>() != null);
 
                 // The following is an optimized version of rotating the right child right, then rotating the parent left.
                 Node right = _right;
@@ -1276,7 +1298,6 @@ namespace System.Collections.Immutable
                 Debug.Assert(!this.IsEmpty);
                 Debug.Assert(!_left.IsEmpty);
                 Debug.Assert(!_left._right.IsEmpty);
-                Contract.Ensures(Contract.Result<Node>() != null);
 
                 // The following is an optimized version of rotating the left child left, then rotating the parent right.
                 Node left = _left;

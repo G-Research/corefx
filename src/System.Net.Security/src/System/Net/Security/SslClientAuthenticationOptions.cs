@@ -14,11 +14,13 @@ namespace System.Net.Security
         private EncryptionPolicy _encryptionPolicy = EncryptionPolicy.RequireEncryption;
         private X509RevocationMode _checkCertificateRevocation = X509RevocationMode.NoCheck;
         private SslProtocols _enabledSslProtocols = SecurityProtocol.SystemDefaultSecurityProtocols;
+        private bool _allowRenegotiation = true;
 
-        internal RemoteCertValidationCallback _certValidationDelegate;
-        internal LocalCertSelectionCallback _certSelectionDelegate;
-
-        public bool AllowRenegotiation { get; set; }
+        public bool AllowRenegotiation
+        {
+            get => _allowRenegotiation;
+            set => _allowRenegotiation = value;
+        }
 
         public LocalCertificateSelectionCallback LocalCertificateSelectionCallback { get; set; }
 
@@ -63,6 +65,12 @@ namespace System.Net.Security
             get => _enabledSslProtocols;
             set => _enabledSslProtocols = value;
         }
+
+        /// <summary>
+        /// Specifies cipher suites allowed to be used for TLS.
+        /// When set to null operating system default will be used.
+        /// Use extreme caution when changing this setting.
+        /// </summary>
+        public CipherSuitesPolicy CipherSuitesPolicy { get; set; }
     }
 }
-

@@ -3,8 +3,10 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections;
-using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
+using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 
 namespace System.ComponentModel.Design.Tests
@@ -180,13 +182,13 @@ namespace System.ComponentModel.Design.Tests
         }
 
         [Fact]
-        public void Properties_GetBeforeAddingChild_ReturnsEmpty()
+        public void Properties_GetBeforeAddingChild_ReturnsNonEmpty()
         {
             var service = new TestDesignerOptionService();
             Assert.Empty(service.Options.Properties);
 
             DesignerOptionService.DesignerOptionCollection options = service.DoCreateOptionCollection(service.Options, "name", "value");
-            Assert.Empty(service.Options.Properties);
+            Assert.NotEmpty(service.Options.Properties);
         }
 
         [Fact]
@@ -265,8 +267,13 @@ namespace System.ComponentModel.Design.Tests
         [Fact]
         public void DesignerOptionConverter_ConvertToString_ReturnsExpected()
         {
-            TypeConverter converter = TypeDescriptor.GetConverter(typeof(DesignerOptionService.DesignerOptionCollection));
-            Assert.Equal("(Collection)", converter.ConvertToString(null));
+            RemoteExecutor.Invoke(() =>
+            {
+                CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+
+                TypeConverter converter = TypeDescriptor.GetConverter(typeof(DesignerOptionService.DesignerOptionCollection));
+                Assert.Equal("(Collection)", converter.ConvertToString(null));
+            }).Dispose();
         }
 
         [Fact]

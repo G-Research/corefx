@@ -169,7 +169,21 @@ namespace System.Collections.Immutable
         /// <param name="index">The 0-based index of the element in the set to return.</param>
         /// <returns>The element at the given position.</returns>
         /// <exception cref="IndexOutOfRangeException">Thrown from getter when <paramref name="index"/> is negative or not less than <see cref="Count"/>.</exception>
+#if !NETSTANDARD10
+        public T this[int index] => _root.ItemRef(index);
+#else
         public T this[int index] => _root[index];
+#endif
+
+#if !NETSTANDARD10
+        /// <summary>
+        /// Gets a read-only reference to the element of the set at the given index.
+        /// </summary>
+        /// <param name="index">The 0-based index of the element in the set to return.</param>
+        /// <returns>A read-only reference to the element at the given position.</returns>
+        /// <exception cref="IndexOutOfRangeException">Thrown when <paramref name="index"/> is negative or not less than <see cref="Count"/>.</exception>
+        public ref readonly T ItemRef(int index) => ref _root.ItemRef(index);
+#endif
 
         #endregion
 
@@ -208,8 +222,6 @@ namespace System.Collections.Immutable
         [Pure]
         public ImmutableList<T> Add(T value)
         {
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
-            Contract.Ensures(Contract.Result<ImmutableList<T>>().Count == this.Count + 1);
             var result = _root.Add(value);
             return this.Wrap(result);
         }
@@ -221,8 +233,6 @@ namespace System.Collections.Immutable
         public ImmutableList<T> AddRange(IEnumerable<T> items)
         {
             Requires.NotNull(items, nameof(items));
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
-            Contract.Ensures(Contract.Result<ImmutableList<T>>().Count >= this.Count);
 
             // Some optimizations may apply if we're an empty list.
             if (this.IsEmpty)
@@ -242,8 +252,6 @@ namespace System.Collections.Immutable
         public ImmutableList<T> Insert(int index, T item)
         {
             Requires.Range(index >= 0 && index <= this.Count, nameof(index));
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
-            Contract.Ensures(Contract.Result<ImmutableList<T>>().Count == this.Count + 1);
             return this.Wrap(_root.Insert(index, item));
         }
 
@@ -255,7 +263,6 @@ namespace System.Collections.Immutable
         {
             Requires.Range(index >= 0 && index <= this.Count, nameof(index));
             Requires.NotNull(items, nameof(items));
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
 
             var result = _root.InsertRange(index, items);
 
@@ -274,7 +281,6 @@ namespace System.Collections.Immutable
         [Pure]
         public ImmutableList<T> Remove(T value, IEqualityComparer<T> equalityComparer)
         {
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
             int index = this.IndexOf(value, equalityComparer);
             return index < 0 ? this : this.RemoveAt(index);
         }
@@ -290,7 +296,6 @@ namespace System.Collections.Immutable
         {
             Requires.Range(index >= 0 && index <= this.Count, nameof(index));
             Requires.Range(count >= 0 && index + count <= this.Count, nameof(count));
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
 
             var result = _root;
             int remaining = count;
@@ -327,8 +332,6 @@ namespace System.Collections.Immutable
         public ImmutableList<T> RemoveRange(IEnumerable<T> items, IEqualityComparer<T> equalityComparer)
         {
             Requires.NotNull(items, nameof(items));
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
-            Contract.Ensures(Contract.Result<ImmutableList<T>>().Count <= this.Count);
 
             // Some optimizations may apply if we're an empty list.
             if (this.IsEmpty)
@@ -358,8 +361,6 @@ namespace System.Collections.Immutable
         public ImmutableList<T> RemoveAt(int index)
         {
             Requires.Range(index >= 0 && index < this.Count, nameof(index));
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
-            Contract.Ensures(Contract.Result<ImmutableList<T>>().Count == this.Count - 1);
             var result = _root.RemoveAt(index);
             return this.Wrap(result);
         }
@@ -379,7 +380,6 @@ namespace System.Collections.Immutable
         public ImmutableList<T> RemoveAll(Predicate<T> match)
         {
             Requires.NotNull(match, nameof(match));
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
 
             return this.Wrap(_root.RemoveAll(match));
         }
@@ -402,9 +402,6 @@ namespace System.Collections.Immutable
         [Pure]
         public ImmutableList<T> Replace(T oldValue, T newValue, IEqualityComparer<T> equalityComparer)
         {
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
-            Contract.Ensures(Contract.Result<ImmutableList<T>>().Count == this.Count);
-
             int index = this.IndexOf(oldValue, equalityComparer);
             if (index < 0)
             {
@@ -450,7 +447,6 @@ namespace System.Collections.Immutable
         public ImmutableList<T> Sort(Comparison<T> comparison)
         {
             Requires.NotNull(comparison, nameof(comparison));
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
             return this.Wrap(_root.Sort(comparison));
         }
 
@@ -487,7 +483,6 @@ namespace System.Collections.Immutable
             Requires.Range(index >= 0, nameof(index));
             Requires.Range(count >= 0, nameof(count));
             Requires.Range(index + count <= this.Count, nameof(count));
-            Contract.Ensures(Contract.Result<ImmutableList<T>>() != null);
 
             return this.Wrap(_root.Sort(index, count, comparer));
         }

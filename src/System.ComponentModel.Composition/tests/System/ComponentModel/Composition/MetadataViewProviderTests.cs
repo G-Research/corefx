@@ -8,6 +8,14 @@ using Xunit;
 
 namespace System.ComponentModel.Composition
 {
+    internal static class TransparentTestCase
+    {
+        public static int GetMetadataView_IMetadataViewWithDefaultedIntInTranparentType(ITrans_MetadataViewWithDefaultedInt view)
+        {
+            return view.MyInt;
+        }
+    }
+
     [MetadataViewImplementation(typeof(MetadataViewWithImplementation))]
     public interface IMetadataViewWithImplementation
     {
@@ -109,7 +117,6 @@ namespace System.ComponentModel.Composition
         }
 
         [Fact]
-        [ActiveIssue(25498, TargetFrameworkMonikers.UapAot)]
         public void GetMetadataView_AbstractClassWithConstructor_ShouldThrowMemberAccessException()
         {
             var metadata = new Dictionary<string, object>();
@@ -231,6 +238,7 @@ namespace System.ComponentModel.Composition
                 get;
             }
         }
+
         public class RawMetadata : Dictionary<string, object>
         {
             public RawMetadata(IDictionary<string, object> dictionary) : base(dictionary) { }
@@ -314,7 +322,7 @@ namespace System.ComponentModel.Composition
         public void GetMetadataView_IMetadataViewWithDefaultedInt64()
         {
             var view = MetadataViewProvider.GetMetadataView<ITrans_MetadataViewWithDefaultedInt64>(new Dictionary<string, object>());
-            Assert.Equal(Int64.MaxValue, view.MyInt64);
+            Assert.Equal(long.MaxValue, view.MyInt64);
         }
 
         [Fact]
@@ -323,6 +331,7 @@ namespace System.ComponentModel.Composition
             var view = MetadataViewProvider.GetMetadataView<ITrans_MetadataViewWithDefaultedString>(new Dictionary<string, object>());
             Assert.Equal("MyString", view.MyString);
         }
+
         [Fact]
         public void GetMetadataView_IMetadataViewWithTypeMismatchDefaultValue()
         {
@@ -352,13 +361,12 @@ namespace System.ComponentModel.Composition
         public void TestMetadataIntConversion()
         {
             var metadata = new Dictionary<string, object>();
-            metadata["Value"] = (Int64)45;
+            metadata["Value"] = (long)45;
 
             var exception = Assert.Throws<CompositionContractMismatchException>(() =>
             {
                 MetadataViewProvider.GetMetadataView<ITrans_HasInt64>(metadata);
             });
         }
-
     }
 }

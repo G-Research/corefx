@@ -5,7 +5,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32.SafeHandles;
@@ -20,7 +19,7 @@ namespace System.IO.Pipes
         internal static string GetPipePath(string serverName, string pipeName)
         {
             string normalizedPipePath = Path.GetFullPath(@"\\" + serverName + @"\pipe\" + pipeName);
-            if (String.Equals(normalizedPipePath, @"\\.\pipe\" + AnonymousPipeName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(normalizedPipePath, @"\\.\pipe\" + AnonymousPipeName, StringComparison.OrdinalIgnoreCase))
             {
                 throw new ArgumentOutOfRangeException(nameof(pipeName), SR.ArgumentOutOfRange_AnonymousReserved);
             }
@@ -71,7 +70,7 @@ namespace System.IO.Pipes
                 }
                 else
                 {
-                    throw Win32Marshal.GetExceptionForWin32Error(errorCode, String.Empty);
+                    throw Win32Marshal.GetExceptionForWin32Error(errorCode, string.Empty);
                 }
             }
             _isMessageComplete = (errorCode != Interop.Errors.ERROR_MORE_DATA);
@@ -81,7 +80,7 @@ namespace System.IO.Pipes
             return r;
         }
 
-        private Task<int> ReadAsyncCore(Memory<byte> buffer, CancellationToken cancellationToken)
+        private ValueTask<int> ReadAsyncCore(Memory<byte> buffer, CancellationToken cancellationToken)
         {
             var completionSource = new ReadWriteCompletionSource(this, buffer, isWrite: false);
 
@@ -121,7 +120,7 @@ namespace System.IO.Pipes
 
                         completionSource.ReleaseResources();
                         UpdateMessageCompletion(true);
-                        return s_zeroTask;
+                        return new ValueTask<int>(0);
 
                     case Interop.Errors.ERROR_IO_PENDING:
                         break;
@@ -132,7 +131,7 @@ namespace System.IO.Pipes
             }
 
             completionSource.RegisterForCancellation(cancellationToken);
-            return completionSource.Task;
+            return new ValueTask<int>(completionSource.Task);
         }
 
         private unsafe void WriteCore(ReadOnlySpan<byte> buffer)
@@ -197,7 +196,7 @@ namespace System.IO.Pipes
 
         // Gets the transmission mode for the pipe.  This is virtual so that subclassing types can 
         // override this in cases where only one mode is legal (such as anonymous pipes)
-        public virtual PipeTransmissionMode TransmissionMode
+        public unsafe virtual PipeTransmissionMode TransmissionMode
         {
             [SuppressMessage("Microsoft.Security", "CA2122:DoNotIndirectlyExposeMethodsWithLinkDemands", Justification = "Security model of pipes: demand at creation but no subsequent demands")]
             get
@@ -206,9 +205,8 @@ namespace System.IO.Pipes
 
                 if (_isFromExistingHandle)
                 {
-                    int pipeFlags;
-                    if (!Interop.Kernel32.GetNamedPipeInfo(_handle, out pipeFlags, IntPtr.Zero, IntPtr.Zero,
-                            IntPtr.Zero))
+                    uint pipeFlags;
+                    if (!Interop.Kernel32.GetNamedPipeInfo(_handle, &pipeFlags, null, null, null))
                     {
                         throw WinIOError(Marshal.GetLastWin32Error());
                     }
@@ -230,7 +228,7 @@ namespace System.IO.Pipes
 
         // Gets the buffer size in the inbound direction for the pipe. This checks if pipe has read
         // access. If that passes, call to GetNamedPipeInfo will succeed.
-        public virtual int InBufferSize
+        public unsafe virtual int InBufferSize
         {
             [SuppressMessage("Microsoft.Security", "CA2122:DoNotIndirectlyExposeMethodsWithLinkDemands")]
             get
@@ -241,13 +239,13 @@ namespace System.IO.Pipes
                     throw new NotSupportedException(SR.NotSupported_UnreadableStream);
                 }
 
-                int inBufferSize;
-                if (!Interop.Kernel32.GetNamedPipeInfo(_handle, IntPtr.Zero, IntPtr.Zero, out inBufferSize, IntPtr.Zero))
+                uint inBufferSize;
+                if (!Interop.Kernel32.GetNamedPipeInfo(_handle, null, null, &inBufferSize, null))
                 {
                     throw WinIOError(Marshal.GetLastWin32Error());
                 }
 
-                return inBufferSize;
+                return (int)inBufferSize;
             }
         }
 
@@ -255,7 +253,7 @@ namespace System.IO.Pipes
         // if it's an outbound only pipe because GetNamedPipeInfo requires read access to the pipe.
         // However, returning cached is good fallback, especially if user specified a value in 
         // the ctor.
-        public virtual int OutBufferSize
+        public unsafe virtual int OutBufferSize
         {
             [SuppressMessage("Microsoft.Security", "CA2122:DoNotIndirectlyExposeMethodsWithLinkDemands", Justification = "Security model of pipes: demand at creation but no subsequent demands")]
             get
@@ -266,20 +264,19 @@ namespace System.IO.Pipes
                     throw new NotSupportedException(SR.NotSupported_UnwritableStream);
                 }
 
-                int outBufferSize;
+                uint outBufferSize;
 
                 // Use cached value if direction is out; otherwise get fresh version
                 if (_pipeDirection == PipeDirection.Out)
                 {
                     outBufferSize = _outBufferSize;
                 }
-                else if (!Interop.Kernel32.GetNamedPipeInfo(_handle, IntPtr.Zero, out outBufferSize,
-                    IntPtr.Zero, IntPtr.Zero))
+                else if (!Interop.Kernel32.GetNamedPipeInfo(_handle, null, &outBufferSize, null, null))
                 {
                     throw WinIOError(Marshal.GetLastWin32Error());
                 }
 
-                return outBufferSize;
+                return (int)outBufferSize;
             }
         }
 
@@ -343,7 +340,7 @@ namespace System.IO.Pipes
             int r = 0;
             int numBytesRead = 0;
 
-            fixed (byte* p = &buffer.DangerousGetPinnableReference())
+            fixed (byte* p = &MemoryMarshal.GetReference(buffer))
             {
                 r = _isAsync ?
                     Interop.Kernel32.ReadFile(handle, p, buffer.Length, IntPtr.Zero, overlapped) :
@@ -381,7 +378,7 @@ namespace System.IO.Pipes
             int r = 0;
             int numBytesWritten = 0;
 
-            fixed (byte* p = &buffer.DangerousGetPinnableReference())
+            fixed (byte* p = &MemoryMarshal.GetReference(buffer))
             {
                 r = _isAsync ?
                     Interop.Kernel32.WriteFile(handle, p, buffer.Length, IntPtr.Zero, overlapped) :
@@ -412,14 +409,38 @@ namespace System.IO.Pipes
             return secAttrs;
         }
 
+        internal static unsafe Interop.Kernel32.SECURITY_ATTRIBUTES GetSecAttrs(HandleInheritability inheritability, PipeSecurity pipeSecurity, ref GCHandle pinningHandle)
+        {
+            Interop.Kernel32.SECURITY_ATTRIBUTES secAttrs = default(Interop.Kernel32.SECURITY_ATTRIBUTES);
+            secAttrs.nLength = (uint)sizeof(Interop.Kernel32.SECURITY_ATTRIBUTES);
+
+            if ((inheritability & HandleInheritability.Inheritable) != 0)
+            {
+                secAttrs.bInheritHandle = Interop.BOOL.TRUE;
+            }
+
+            if (pipeSecurity != null)
+            {
+                byte[] securityDescriptor = pipeSecurity.GetSecurityDescriptorBinaryForm();
+                pinningHandle = GCHandle.Alloc(securityDescriptor, GCHandleType.Pinned);
+                fixed (byte* pSecurityDescriptor = securityDescriptor)
+                {
+                    secAttrs.lpSecurityDescriptor = (IntPtr)pSecurityDescriptor;
+                }
+            }
+
+            return secAttrs;
+        }
+
+
+
         /// <summary>
         /// Determine pipe read mode from Win32 
         /// </summary>
-        private void UpdateReadMode()
+        private unsafe void UpdateReadMode()
         {
-            int flags;
-            if (!Interop.Kernel32.GetNamedPipeHandleState(SafePipeHandle, out flags, IntPtr.Zero, IntPtr.Zero,
-                    IntPtr.Zero, IntPtr.Zero, 0))
+            uint flags;
+            if (!Interop.Kernel32.GetNamedPipeHandleStateW(SafePipeHandle, &flags, null, null, null, null, 0))
             {
                 throw WinIOError(Marshal.GetLastWin32Error());
             }

@@ -59,7 +59,6 @@ namespace System.IO.Pipes.Tests
         }
 
         [Fact]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, "There is a bug in netfx around async read on a broken PipeStream. See #2601 and #2899. This bug is fixed in netcore.")]
         public virtual async Task ReadFromPipeWithClosedPartner_Span_ReadNoBytes()
         {
             using (ServerClientPair pair = CreateServerClientPair())
@@ -88,7 +87,7 @@ namespace System.IO.Pipes.Tests
                 byte[] sent = new byte[] { 123, 0, 5 };
                 byte[] received = new byte[] { 0, 0, 0 };
 
-                Task write = pair.writeablePipe.WriteAsync(new ReadOnlyMemory<byte>(sent));
+                ValueTask write = pair.writeablePipe.WriteAsync(new ReadOnlyMemory<byte>(sent));
                 Assert.Equal(sent.Length, await pair.readablePipe.ReadAsync(new Memory<byte>(received, 0, sent.Length)));
                 Assert.Equal(sent, received);
                 await write;
@@ -112,7 +111,7 @@ namespace System.IO.Pipes.Tests
                 for (int iter = 0; iter < iterations; iter++)
                 {
                     rand.NextBytes(writeBuffer);
-                    Task writerTask = pair.writeablePipe.WriteAsync(new ReadOnlyMemory<byte>(writeBuffer), cancellationToken);
+                    ValueTask writerTask = pair.writeablePipe.WriteAsync(new ReadOnlyMemory<byte>(writeBuffer), cancellationToken);
 
                     int totalRead = 0;
                     while (totalRead < writeBuffer.Length)

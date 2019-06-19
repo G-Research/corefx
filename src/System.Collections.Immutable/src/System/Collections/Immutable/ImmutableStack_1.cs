@@ -66,9 +66,7 @@ namespace System.Collections.Immutable
         {
             get
             {
-                Contract.Ensures(Contract.Result<ImmutableStack<T>>() != null);
-                Contract.Ensures(Contract.Result<ImmutableStack<T>>().IsEmpty);
-                Contract.Assume(s_EmptyField.IsEmpty);
+                Debug.Assert(s_EmptyField.IsEmpty);
                 return s_EmptyField;
             }
         }
@@ -78,9 +76,7 @@ namespace System.Collections.Immutable
         /// </summary>
         public ImmutableStack<T> Clear()
         {
-            Contract.Ensures(Contract.Result<ImmutableStack<T>>() != null);
-            Contract.Ensures(Contract.Result<ImmutableStack<T>>().IsEmpty);
-            Contract.Assume(s_EmptyField.IsEmpty);
+            Debug.Assert(s_EmptyField.IsEmpty);
             return Empty;
         }
 
@@ -121,6 +117,26 @@ namespace System.Collections.Immutable
             return _head;
         }
 
+#if !NETSTANDARD10
+        /// <summary>
+        /// Gets a read-only reference to the element on the top of the stack.
+        /// </summary>
+        /// <returns>
+        /// A read-only reference to the element on the top of the stack. 
+        /// </returns>
+        /// <exception cref="InvalidOperationException">Thrown when the stack is empty.</exception>
+        [Pure]
+        public ref readonly T PeekRef()
+        {
+            if (this.IsEmpty)
+            {
+                throw new InvalidOperationException(SR.InvalidEmptyOperation);
+            }
+
+            return ref _head;
+        }
+#endif
+
         /// <summary>
         /// Pushes an element onto a stack and returns the new stack.
         /// </summary>
@@ -129,8 +145,6 @@ namespace System.Collections.Immutable
         [Pure]
         public ImmutableStack<T> Push(T value)
         {
-            Contract.Ensures(Contract.Result<ImmutableStack<T>>() != null);
-            Contract.Ensures(!Contract.Result<ImmutableStack<T>>().IsEmpty);
             return new ImmutableStack<T>(value, this);
         }
 
@@ -153,12 +167,12 @@ namespace System.Collections.Immutable
         [Pure]
         public ImmutableStack<T> Pop()
         {
-            Contract.Ensures(Contract.Result<ImmutableStack<T>>() != null);
             if (this.IsEmpty)
             {
                 throw new InvalidOperationException(SR.InvalidEmptyOperation);
             }
 
+            Debug.Assert(_tail != null);
             return _tail;
         }
 
@@ -233,15 +247,14 @@ namespace System.Collections.Immutable
         [Pure]
         internal ImmutableStack<T> Reverse()
         {
-            Contract.Ensures(Contract.Result<ImmutableStack<T>>() != null);
-            Contract.Ensures(Contract.Result<ImmutableStack<T>>().IsEmpty == this.IsEmpty);
-
             var r = this.Clear();
             for (ImmutableStack<T> f = this; !f.IsEmpty; f = f.Pop())
             {
                 r = r.Push(f.Peek());
             }
 
+            Debug.Assert(r != null);
+            Debug.Assert(r.IsEmpty == IsEmpty);
             return r;
         }
     }

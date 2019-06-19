@@ -6,25 +6,51 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 
 namespace System.Runtime.Serialization.Formatters.Tests
 {
-    public partial class BinaryFormatterTests : RemoteExecutorTestBase
+    public partial class BinaryFormatterTests : FileCleanupTestBase
     {
+        // On 32-bit we can't test these high inputs as they cause OutOfMemoryExceptions.
+        [ConditionalTheory(typeof(Environment), nameof(Environment.Is64BitProcess))]
+        [InlineData(2 * 6_584_983 - 2)] // previous limit
+        [InlineData(2 * 7_199_369 - 2)] // last pre-computed prime number
+        public void SerializeHugeObjectGraphs(int limit)
+        {
+            Point[] pointArr = Enumerable.Range(0, limit)
+                .Select(i => new Point(i, i + 1))
+                .ToArray();
+
+            // This should not throw a SerializationException as we removed the artifical limit in the ObjectIDGenerator.
+            // Instead of round tripping we only serialize to minimize test time.
+            // This will throw on .NET Framework as the artificial limit is still enabled.
+            var bf = new BinaryFormatter();
+            AssertExtensions.ThrowsIf<SerializationException>(PlatformDetection.IsFullFramework, () =>
+            {
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    bf.Serialize(ms, pointArr);
+                }
+            });
+        }
+
         [Theory]
         [MemberData(nameof(BasicObjectsRoundtrip_MemberData))]
         public void ValidateBasicObjectsRoundtrip(object obj, FormatterAssemblyStyle assemblyFormat, TypeFilterLevel filterLevel, FormatterTypeStyle typeFormat)
         {
             object clone = BinaryFormatterHelpers.Clone(obj, null, assemblyFormat, filterLevel, typeFormat);
             // string.Empty and DBNull are both singletons
-            if (!ReferenceEquals(obj, string.Empty) && !(obj is DBNull)) 
+            if (!ReferenceEquals(obj, string.Empty) && !(obj is DBNull))
             {
                 Assert.NotSame(obj, clone);
             }
@@ -50,15 +76,15 @@ namespace System.Runtime.Serialization.Formatters.Tests
 
         [Theory]
         [MemberData(nameof(SerializableObjects_MemberData))]
-        public void ValidateAgainstBlobs(object obj, string[] blobs) 
+        public void ValidateAgainstBlobs(object obj, TypeSerializableValue[] blobs)
             => ValidateAndRoundtrip(obj, blobs, false);
 
         [Theory]
         [MemberData(nameof(SerializableEqualityComparers_MemberData))]
-        public void ValidateEqualityComparersAgainstBlobs(object obj, string[] blobs)
+        public void ValidateEqualityComparersAgainstBlobs(object obj, TypeSerializableValue[] blobs)
             => ValidateAndRoundtrip(obj, blobs, true);
 
-        private static void ValidateAndRoundtrip(object obj, string[] blobs, bool isEqualityComparer)
+        private static void ValidateAndRoundtrip(object obj, TypeSerializableValue[] blobs, bool isEqualityComparer)
         {
             if (obj == null)
             {
@@ -71,19 +97,30 @@ namespace System.Runtime.Serialization.Formatters.Tests
                     BinaryFormatterHelpers.ToBase64String(obj, FormatterAssemblyStyle.Full));
             }
 
+            // Check if the passed in value in a serialization entry is assignable by the passed in type.
+            if (obj is ISerializable customSerializableObj && HasObjectTypeIntegrity(customSerializableObj))
+            {
+                CheckObjectTypeIntegrity(customSerializableObj);
+            }
+
             SanityCheckBlob(obj, blobs);
 
-            // SqlException isn't deserializable from Desktop --> Core.
+            // SqlException, ReflectionTypeLoadException and LicenseException aren't deserializable from Desktop --> Core.
             // Therefore we remove the second blob which is the one from Desktop.
             if (!PlatformDetection.IsFullFramework && (obj is SqlException || obj is ReflectionTypeLoadException || obj is LicenseException))
             {
-                var tmpList = new List<string>(blobs);
+                var tmpList = new List<TypeSerializableValue>(blobs);
                 tmpList.RemoveAt(1);
+
+                int index = tmpList.FindIndex(b => b.Platform.IsNetfxPlatform());
+                if (index >= 0)
+                    tmpList.RemoveAt(index);
+
                 blobs = tmpList.ToArray();
             }
 
             // We store our framework blobs in index 1
-            int platformBlobIndex = PlatformDetection.IsFullFramework ? 1 : 0;
+            int platformBlobIndex = blobs.GetPlatformIndex();
             for (int i = 0; i < blobs.Length; i++)
             {
                 // Check if the current blob is from the current running platform.
@@ -91,14 +128,32 @@ namespace System.Runtime.Serialization.Formatters.Tests
 
                 if (isEqualityComparer)
                 {
-                    ValidateEqualityComparer(BinaryFormatterHelpers.FromBase64String(blobs[i], FormatterAssemblyStyle.Simple));
-                    ValidateEqualityComparer(BinaryFormatterHelpers.FromBase64String(blobs[i], FormatterAssemblyStyle.Full));
+                    ValidateEqualityComparer(BinaryFormatterHelpers.FromBase64String(blobs[i].Base64Blob, FormatterAssemblyStyle.Simple));
+                    ValidateEqualityComparer(BinaryFormatterHelpers.FromBase64String(blobs[i].Base64Blob, FormatterAssemblyStyle.Full));
                 }
                 else
                 {
-                    EqualityExtensions.CheckEquals(obj, BinaryFormatterHelpers.FromBase64String(blobs[i], FormatterAssemblyStyle.Simple), isSamePlatform);
-                    EqualityExtensions.CheckEquals(obj, BinaryFormatterHelpers.FromBase64String(blobs[i], FormatterAssemblyStyle.Full), isSamePlatform);
+                    EqualityExtensions.CheckEquals(obj, BinaryFormatterHelpers.FromBase64String(blobs[i].Base64Blob, FormatterAssemblyStyle.Simple), isSamePlatform);
+                    EqualityExtensions.CheckEquals(obj, BinaryFormatterHelpers.FromBase64String(blobs[i].Base64Blob, FormatterAssemblyStyle.Full), isSamePlatform);
                 }
+            }
+        }
+
+        [Fact]
+        [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework)]
+        public void RegexExceptionSerializable()
+        {
+            try
+            {
+#pragma warning disable RE0001 // Regex issue: {0}
+                new Regex("*"); // parsing "*" - Quantifier {x,y} following nothing.
+#pragma warning restore RE0001 // Regex issue: {0}
+            }
+            catch (ArgumentException ex)
+            {
+                Assert.Equal(ex.GetType().Name, "RegexParseException");
+                ArgumentException clone = BinaryFormatterHelpers.Clone(ex);
+                Assert.IsType<ArgumentException>(clone);
             }
         }
 
@@ -450,7 +505,7 @@ namespace System.Runtime.Serialization.Formatters.Tests
             }
 
             // In another process, deserialize from that file and serialize to another
-            RemoteInvoke((remoteInput, remoteOutput) =>
+            RemoteExecutor.Invoke((remoteInput, remoteOutput) =>
             {
                 Assert.False(File.Exists(remoteOutput));
                 using (FileStream input = File.OpenRead(remoteInput))
@@ -458,7 +513,7 @@ namespace System.Runtime.Serialization.Formatters.Tests
                 {
                     var b = new BinaryFormatter();
                     b.Serialize(output, b.Deserialize(input));
-                    return SuccessExitCode;
+                    return RemoteExecutor.SuccessExitCode;
                 }
             }, outputPath, inputPath).Dispose();
 
@@ -472,7 +527,6 @@ namespace System.Runtime.Serialization.Formatters.Tests
 
         [Fact]
         [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, ".NET Framework fails when serializing arrays with non-zero lower bounds")]
-        [SkipOnTargetFramework(TargetFrameworkMonikers.UapAot, "UAPAOT does not support non-zero lower bounds")]
         public void Roundtrip_ArrayContainingArrayAtNonZeroLowerBound()
         {
             BinaryFormatterHelpers.Clone(Array.CreateInstance(typeof(uint[]), new[] { 5 }, new[] { 1 }));
@@ -486,12 +540,41 @@ namespace System.Runtime.Serialization.Formatters.Tests
             Assert.Equal(obj.GetType().GetGenericArguments()[0], objType.GetGenericArguments()[0]);
         }
 
-        private static void SanityCheckBlob(object obj, string[] blobs)
+        private static bool HasObjectTypeIntegrity(ISerializable serializable)
+        {
+            return !PlatformDetection.IsFullFramework ||
+                !(serializable is NotFiniteNumberException);
+        }
+
+        private static void CheckObjectTypeIntegrity(ISerializable serializable)
+        {
+            SerializationInfo testData = new SerializationInfo(serializable.GetType(), new FormatterConverter());
+            serializable.GetObjectData(testData, new StreamingContext(StreamingContextStates.Other));
+
+            foreach (SerializationEntry entry in testData)
+            {
+                if (entry.Value != null)
+                {
+                    Assert.IsAssignableFrom(entry.ObjectType, entry.Value);
+                }
+            }
+        }
+
+        private static void SanityCheckBlob(object obj, TypeSerializableValue[] blobs)
         {
             // These types are unstable during serialization and produce different blobs.
             if (obj is WeakReference<Point> ||
                 obj is Collections.Specialized.HybridDictionary ||
-                obj is TimeZoneInfo.AdjustmentRule)
+                obj is Color ||
+                obj.GetType().FullName == "System.Collections.SortedList+SyncSortedList")
+            {
+                return;
+            }
+
+            // The blobs aren't identical because of different implementations on Unix vs. Windows.
+            if (obj is Bitmap ||
+                obj is Icon ||
+                obj is Metafile)
             {
                 return;
             }
@@ -504,18 +587,18 @@ namespace System.Runtime.Serialization.Formatters.Tests
             }
 
             // Check if runtime generated blob is the same as the stored one
-            int frameworkBlobNumber = PlatformDetection.IsFullFramework ? 1 : 0;
+            int frameworkBlobNumber = blobs.GetPlatformIndex();
             if (frameworkBlobNumber < blobs.Length)
             {
                 string runtimeBlob = BinaryFormatterHelpers.ToBase64String(obj, FormatterAssemblyStyle.Full);
 
-                string storedComparableBlob = CreateComparableBlobInfo(blobs[frameworkBlobNumber]);
+                string storedComparableBlob = CreateComparableBlobInfo(blobs[frameworkBlobNumber].Base64Blob);
                 string runtimeComparableBlob = CreateComparableBlobInfo(runtimeBlob);
 
                 Assert.True(storedComparableBlob == runtimeComparableBlob,
                     $"The stored blob for type {obj.GetType().FullName} is outdated and needs to be updated.{Environment.NewLine}{Environment.NewLine}" +
                     $"-------------------- Stored blob ---------------------{Environment.NewLine}" +
-                    $"Encoded: {blobs[frameworkBlobNumber]}{Environment.NewLine}" +
+                    $"Encoded: {blobs[frameworkBlobNumber].Base64Blob}{Environment.NewLine}" +
                     $"Decoded: {storedComparableBlob}{Environment.NewLine}{Environment.NewLine}" +
                     $"--------------- Runtime generated blob ---------------{Environment.NewLine}" +
                     $"Encoded: {runtimeBlob}{Environment.NewLine}" +
@@ -559,6 +642,9 @@ namespace System.Runtime.Serialization.Formatters.Tests
             base64Blob = Encoding.UTF8.GetString(data);
 
             return Regex.Replace(base64Blob, @"Version=\d.\d.\d.\d.", "Version=0.0.0.0", RegexOptions.Multiline)
+                // Ignore the old Test key and Open public keys.
+                .Replace("PublicKeyToken=cc7b13ffcd2ddd51", "PublicKeyToken=null")
+                .Replace("PublicKeyToken=9d77cc7ad39b68eb", "PublicKeyToken=null")
                 .Replace("\r\n", string.Empty)
                 .Replace("\n", string.Empty)
                 .Replace("\r", string.Empty)

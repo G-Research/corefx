@@ -4,15 +4,15 @@
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel.Composition.Diagnostics;
+using System.Composition.Diagnostics;
 using System.ComponentModel.Composition.Primitives;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Microsoft.Internal;
 using Microsoft.Internal.Collections;
 using IOPath = System.IO.Path;
@@ -223,8 +223,8 @@ namespace System.ComponentModel.Composition.Hosting
         /// </exception>
         public DirectoryCatalog(string path, string searchPattern)
         {
-            Requires.NotNullOrEmpty(path, "path");
-            Requires.NotNullOrEmpty(searchPattern, "searchPattern");
+            Requires.NotNullOrEmpty(path, nameof(path));
+            Requires.NotNullOrEmpty(searchPattern, nameof(searchPattern));
 
             _definitionOrigin = this;
             Initialize(path, searchPattern);
@@ -266,8 +266,8 @@ namespace System.ComponentModel.Composition.Hosting
         /// </exception>
         public DirectoryCatalog(string path, string searchPattern, ICompositionElement definitionOrigin)
         {
-            Requires.NotNullOrEmpty(path, "path");
-            Requires.NotNullOrEmpty(searchPattern, "searchPattern");
+            Requires.NotNullOrEmpty(path, nameof(path));
+            Requires.NotNullOrEmpty(searchPattern, nameof(searchPattern));
             Requires.NotNull(definitionOrigin, nameof(definitionOrigin));
 
             _definitionOrigin = definitionOrigin;
@@ -315,9 +315,9 @@ namespace System.ComponentModel.Composition.Hosting
         /// </exception>
         public DirectoryCatalog(string path, string searchPattern, ReflectionContext reflectionContext)
         {
-            Requires.NotNullOrEmpty(path, "path");
-            Requires.NotNullOrEmpty(searchPattern, "searchPattern");
-            Requires.NotNull(reflectionContext, "reflectionContext");
+            Requires.NotNullOrEmpty(path, nameof(path));
+            Requires.NotNullOrEmpty(searchPattern, nameof(searchPattern));
+            Requires.NotNull(reflectionContext, nameof(reflectionContext));
 
             _reflectionContext = reflectionContext;
             _definitionOrigin = this;
@@ -369,10 +369,10 @@ namespace System.ComponentModel.Composition.Hosting
         /// </exception>
         public DirectoryCatalog(string path, string searchPattern, ReflectionContext reflectionContext, ICompositionElement definitionOrigin)
         {
-            Requires.NotNullOrEmpty(path, "path");
-            Requires.NotNullOrEmpty(searchPattern, "searchPattern");
-            Requires.NotNull(reflectionContext, "reflectionContext");
-            Requires.NotNull(definitionOrigin, "definitionOrigin");
+            Requires.NotNullOrEmpty(path, nameof(path));
+            Requires.NotNullOrEmpty(searchPattern, nameof(searchPattern));
+            Requires.NotNull(reflectionContext, nameof(reflectionContext));
+            Requires.NotNull(definitionOrigin, nameof(definitionOrigin));
 
             _reflectionContext = reflectionContext;
             _definitionOrigin = definitionOrigin;
@@ -386,8 +386,8 @@ namespace System.ComponentModel.Composition.Hosting
         {
             get
             {
-                Contract.Ensures(Contract.Result<string>() != null);
-                
+                Debug.Assert(_fullPath != null);
+
                 return _fullPath;
             }
         }
@@ -399,10 +399,9 @@ namespace System.ComponentModel.Composition.Hosting
         {
             get
             {
-                Contract.Ensures(Contract.Result<ReadOnlyCollection<string>>() != null);
-
                 using (new ReadLock(_thisLock))
                 {
+                    Debug.Assert(_loadedFiles != null);
                     return _loadedFiles;
                 }
             }
@@ -415,8 +414,8 @@ namespace System.ComponentModel.Composition.Hosting
         {
             get
             {
-                Contract.Ensures(Contract.Result<string>() != null);
-                
+                Debug.Assert(_path != null);
+
                 return _path;
             }
         }
@@ -571,7 +570,10 @@ namespace System.ComponentModel.Composition.Hosting
         public void Refresh()
         {
             ThrowIfDisposed();
-            Assumes.NotNull(_loadedFiles);
+            if (_loadedFiles == null)
+            {
+                throw new Exception(SR.Diagnostic_InternalExceptionMessage);
+            }
 
             List<Tuple<string, AssemblyCatalog>> catalogsToAdd;
             List<Tuple<string, AssemblyCatalog>> catalogsToRemove;
@@ -735,17 +737,13 @@ namespace System.ComponentModel.Composition.Hosting
         private string[] GetFiles()
         {
             string[] files = Directory.GetFiles(_fullPath, _searchPattern);
-            return Array.ConvertAll<string, string>(files, (file) => file.ToUpperInvariant());
+            return Array.ConvertAll<string, string>(files, (file) => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? file.ToUpperInvariant() : file);
         }
 
         private static string GetFullPath(string path)
         {
-            if (!IOPath.IsPathRooted(path) && AppDomain.CurrentDomain.BaseDirectory != null)
-            {
-                path = IOPath.Combine(AppDomain.CurrentDomain.BaseDirectory, path);
-            }
-
-            return IOPath.GetFullPath(path).ToUpperInvariant();
+            var fullPath = IOPath.GetFullPath(path);
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? fullPath.ToUpperInvariant() : fullPath;
         }
 
         private void Initialize(string path, string searchPattern)
